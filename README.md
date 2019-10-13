@@ -22,5 +22,11 @@ category is found, use it to find the _most fitting_ category
 ### To research
 
 * [Dandelion API](https://dandelion.eu/) for the NLP approach
+    * works relatively fine, but its quite expensive. For us, if we would use the brute-force approach of comparing
+      all_sitc with all_oenace would be around 4 milion requets for every category. A load like this is not even supported
+      by their offers (neither free nor paid).
+    * As part of this, a bunch of other text similarity API-s were considered (e.g. [Parallel Dots](https://www.paralleldots.com/), 
+     [TwinWord](https://www.twinword.com/api/text-similarity.php), [RxNLP](https://rxnlp.com/text-similarity-api/#.XaL5uuYzY5k)),
+     but all of them are too expensive for use.
 * find if there is a model that finds similarities between different product 
   categories 

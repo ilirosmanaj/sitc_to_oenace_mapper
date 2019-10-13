@@ -6,7 +6,7 @@ SITC2_FILE_PATH = '../data/sitc2.csv'
 
 
 def text_similarites(text1: str, text2: str) -> int:
-    # TODO: add more explanations of what this does
+    # TODO: add more explanations of what this does from. Use https://github.com/seatgeek/fuzzywuzzy
     return fuzz.token_set_ratio(text1, text2)
 
 
@@ -14,7 +14,7 @@ def main():
     oenace_codes = load_csv(OENACE_FILE_PATH)
     sitc_codes = load_csv(SITC2_FILE_PATH)
 
-    for sitc_code in sitc_codes[:1]:
+    for sitc_code in sitc_codes:
         # hold a list of possible mapping candidates from oenace codes
         oenace_candidates = []
 
@@ -26,10 +26,13 @@ def main():
                     'oenace_code': oenace_code,
                     'similarity': text_similarity,
                 })
-                print(f'S1: {sitc_code["title"]}, S2: {oenace_code["title"]}, Similarity: {text_similarity}')
-
-        if not oenace_candidates:
-            print(f'Did not find any mapping to oenace for {sitc_code}')
+        print("\n")
+        if oenace_candidates:
+            print(f'Candidates for "{sitc_code["title"]}"')
+            for cand in oenace_candidates:
+                print(f'\t Similarity: {cand["similarity"]}, OENACE value: "{cand["oenace_code"]["title"]}"')
+        else:
+            print(f'Did not find any mapping to oenace for "{sitc_code["title"]}"')
 
 
 if __name__ == '__main__':
