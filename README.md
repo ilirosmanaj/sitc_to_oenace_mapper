@@ -14,8 +14,8 @@ Install requirements via:
 The mapping procedure has three main steps:
 
 * fuzzy matching based on the description of categories
-** think of incorporating semantic meaning as well (try some NLP approach)
-* if matching by description is not good enough, try corresponding table 
+    * think of incorporating semantic meaning as well (try some NLP approach)
+* if matching by description is not good enough, try corresponding tables
 * build a model that would find similarities between categories, and if no good 
 category is found, use it to find the _most fitting_ category 
 
