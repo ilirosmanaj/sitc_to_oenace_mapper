@@ -1,12 +1,35 @@
+from fuzzywuzzy import fuzz
+from src.utils import load_csv
 
 OENACE_FILE_PATH = '../data/oenace2008.csv'
-SITC2_FILE_PATH = '../data/stic2.csv'
+SITC2_FILE_PATH = '../data/sitc2.csv'
+
+
+def text_similarites(text1: str, text2: str) -> int:
+    # TODO: add more explanations of what this does
+    return fuzz.token_set_ratio(text1, text2)
 
 
 def main():
-    # fetch sitc and oenace codes
-    # foreach sitc code, perform the required steps
-    pass
+    oenace_codes = load_csv(OENACE_FILE_PATH)
+    sitc_codes = load_csv(SITC2_FILE_PATH)
+
+    for sitc_code in sitc_codes[:1]:
+        # hold a list of possible mapping candidates from oenace codes
+        oenace_candidates = []
+
+        for oenace_code in oenace_codes:
+            text_similarity = text_similarites(sitc_code['title'], oenace_code['title'])
+
+            if text_similarity > 60:
+                oenace_candidates.append({
+                    'oenace_code': oenace_code,
+                    'similarity': text_similarity,
+                })
+                print(f'S1: {sitc_code["title"]}, S2: {oenace_code["title"]}, Similarity: {text_similarity}')
+
+        if not oenace_candidates:
+            print(f'Did not find any mapping to oenace for {sitc_code}')
 
 
 if __name__ == '__main__':
