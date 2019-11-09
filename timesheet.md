@@ -10,3 +10,5 @@
 | 13.10.2019  |  3h             | Implement fuzzy matching, fix sitc importer, debugging  |
 | 22.10.2019  |  1h             | Read other semantic matching techniques |
 | 24.10.2019  |  1h             | Tried [sematch](http://gsi-upm.github.io/sematch/) |
+| 06.11.2019  |  5h             | Started implementing inverted index |
+| 09.11.2019  |  5h             | Implemented inverted index. Start implementing results matchings |

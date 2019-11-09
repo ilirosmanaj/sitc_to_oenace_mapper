@@ -30,7 +30,7 @@ def perform_exploration(query: str, method: str, metadata: dict):
                                      posting_list=posting_list)
 
     # return sorted dictionary by score
-    return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:10]
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:25]
 
 
 def main():

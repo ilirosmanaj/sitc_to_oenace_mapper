@@ -82,6 +82,7 @@ def _tokenize(text: str) -> List[str]:
     tokenizer = RegexpTokenizer(r'\w+')
     return tokenizer.tokenize(text)
 
+
 def _lowercase(text: List[str]) -> List[str]:
     return list(map(lambda x: x.lower(), text))
 

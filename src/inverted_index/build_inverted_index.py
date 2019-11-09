@@ -58,7 +58,7 @@ def parse_oeance_document(method: str = None) -> dict:
                 continue
 
             # Split line by fetching category id and category description
-            category_id, category_description = line[2], line[3]
+            category_id, category_description = line[1], line[3]
 
             # do the cleanup
             category_description = pre_process(category_description, method)
