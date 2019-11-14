@@ -70,7 +70,7 @@ def parse_oeance_document(method: str = None) -> dict:
 
 
 def main():
-    method = 'stemming'
+    method = 'lemmatizing'
     documents = parse_oeance_document(method)
 
     # build basic package inverted index
