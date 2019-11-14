@@ -46,7 +46,7 @@ def parse_oeance_document(method: str = None) -> dict:
     """
     docs = {}
 
-    path = Path('../data/raw/oenace2008.csv')
+    path = Path('../data/preprocessed/oenace2008.csv')
 
     with open(path) as csvfile:
         read_csv = csv.reader(csvfile, delimiter=',')

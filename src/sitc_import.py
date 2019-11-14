@@ -2,7 +2,8 @@ import csv
 import requests
 
 SITC_INFO_URL = 'https://comtrade.un.org/Data/cache/classificationS2.json'
-SITC_PATH = '../data/sitc2.csv'
+SITC_PATH_RAW = '../data/raw/sitc2.csv'
+SITC_PATH_PREPROCESSED = '../data/preprocessed/sitc2.csv'
 
 
 def _format_description(description: str) -> str:
@@ -29,10 +30,20 @@ def main():
         'Parent': code['parent']
     } for code in sitc_codes]
 
-    with open(SITC_PATH, 'w') as csvfile:
+    valid_sitc_codes = []
+    # fix titles for children and select only categories with code of length 4
+    for sitc_code in sitc_codes:
+        if '...' in sitc_code['Title']:
+            parent_title = [row['Title'] for row in sitc_codes if row['ID'] == sitc_code['Parent'].split('.')[0]][0]
+            sitc_code['Title'] = f"{parent_title} {sitc_code['Title'].replace('...', '')}"
+
+        if len(sitc_code['ID']) == 4:
+            valid_sitc_codes.append(sitc_code)
+
+    with open(SITC_PATH_PREPROCESSED, 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['ID', 'Title', 'Parent'])
         writer.writeheader()
-        writer.writerows(sitc_codes)
+        writer.writerows(valid_sitc_codes)
 
     print('Done!')
 
