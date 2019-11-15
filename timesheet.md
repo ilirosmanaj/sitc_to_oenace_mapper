@@ -12,3 +12,6 @@
 | 24.10.2019  |  1h             | Tried [sematch](http://gsi-upm.github.io/sematch/) |
 | 06.11.2019  |  5h             | Started implementing inverted index |
 | 09.11.2019  |  5h             | Implemented inverted index. Start implementing results matchings |
+| 13.11.2019  |  3h             | Results matching and pretty print the intersections |
+| 14.11.2019  |  1.5h           | Meeting Tobias |
+| 14.11.2019  |  4h             | Properly preprocess input files (use class category only) |

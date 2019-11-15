@@ -1,3 +1,4 @@
+from pprint import pprint
 from typing import List
 from fuzzywuzzy import fuzz
 
@@ -5,8 +6,8 @@ from inverted_index.querying import perform_exploration
 from src.utils import load_csv
 from inverted_index.utils import load_metadata
 
-OENACE_FILE_PATH = '../data/raw/oenace2008.csv'
-SITC2_FILE_PATH = '../data/raw/sitc2.csv'
+OENACE_FILE_PATH = '../data/preprocessed/oenace2008.csv'
+SITC2_FILE_PATH = '../data/preprocessed/sitc2.csv'
 
 TEXT_SIMILARITY_THRESHOLD = 75
 
@@ -30,7 +31,6 @@ def main():
     method = 'lemmatizing'
     metadata = load_metadata(method)
 
-    mappings = {}
     counter = 0
     total = 0
     for sitc_code, sitc_title in sitc_codes.items():
@@ -69,7 +69,7 @@ def main():
         # step3: use corresponding tables
 
         # step 4: a model
-
+        # pprint(oenace_candidates)
         # find intersections from all steps
         all_matchings = []
         for method, matchings in oenace_candidates.items():
