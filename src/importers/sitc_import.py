@@ -2,8 +2,8 @@ import csv
 import requests
 
 SITC_INFO_URL = 'https://comtrade.un.org/Data/cache/classificationS2.json'
-SITC_PATH_RAW = '../data/raw/sitc2.csv'
-SITC_PATH_PREPROCESSED = '../data/preprocessed/sitc2.csv'
+SITC_PATH_RAW = '../../data/raw/sitc2.csv'
+SITC_PATH_PREPROCESSED = '../../data/preprocessed/sitc2.csv'
 
 
 def _format_description(description: str) -> str:
