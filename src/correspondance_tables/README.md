@@ -1,4 +1,4 @@
-# Correspondace table usage
+# Correspondece table usage
 
 Since we have a limited number of categories (615 of OENACE and 757 for SITC), we need to do add data from other sources
 as well, in order for our mapping to be more accurate.
@@ -20,3 +20,10 @@ The list of correspondance tables used:
 Source: [https://unstats.un.org/unsd/trade/classifications/correspondence-tables.asp](https://unstats.un.org/unsd/trade/classifications/correspondence-tables.asp)
 
 All these are converted using the `convert.py` script and the results are stored under `data/correspondance_tables/preprocseed`.
+
+# Steps used:
+
+* Fetch HS (Harmonized Systems) definition using `ìmporters/hs_import.py`
+* Fetch correspondence tables from HS-SITC using link above
+* Foreach of our sitc_code, get descriptions from HS system
+* Use these _enriched_ descriptions for text similarity search and inverted index
