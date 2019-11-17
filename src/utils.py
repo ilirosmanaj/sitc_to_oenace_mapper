@@ -15,3 +15,10 @@ def load_correspondence_tables(path_to_file: str, system: str) -> Dict:
         csv_reader = csv.DictReader(csv_file)
         rows = {row['SITC2']: row[system] for row in csv_reader}
     return rows
+
+
+def load_enriched_sitc_codes(path_to_file: str) -> Dict:
+    with open(path_to_file, 'r') as csv_file:
+        csv_reader = csv.DictReader(csv_file)
+        rows = {row['ID']: row["Mapping"].split('~') for row in csv_reader}
+    return rows

@@ -16,3 +16,4 @@
 | 14.11.2019  |  1.5h           | Meeting Tobias |
 | 14.11.2019  |  4h             | Properly preprocess input files (use class category only) |
 | 16.11.2019  |  6h             | Fetch and preprocess data from correspondance tables. Setup for using them in the mapper |
+| 17.11.2019  |  6h             | Create the mapping for the _enriched_ sitc descriptions |
