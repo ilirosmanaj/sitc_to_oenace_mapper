@@ -11,7 +11,7 @@ OENACE_FILE_PATH = '../data/preprocessed/oenace2008.csv'
 SITC2_FILE_PATH = '../data/preprocessed/sitc2.csv'
 SITC2_ENRICHED_FILE_PATH = '../data/correspondence_tables/mapped/enriched.csv'
 
-TEXT_SIMILARITY_THRESHOLD = 65
+TEXT_SIMILARITY_THRESHOLD = 75
 
 
 def text_similarites(text1: str, text2: str, verbose: bool = False) -> int:
@@ -24,6 +24,16 @@ def text_similarites(text1: str, text2: str, verbose: bool = False) -> int:
 
 def sort_by_similarity(matching_list: List[dict]) -> List[dict]:
     return sorted(matching_list, key=lambda x: x['similarity'], reverse=True)
+
+
+def perform_text_similarity(sitc_title: str, oeance_title: str, should_extend_sitc: bool = False,
+                            sitc_extensions: List[str] = None):
+    if not should_extend_sitc:
+        return text_similarites(sitc_title, oeance_title)
+    else:
+        # be very optimistic and assume that text similarity value equals the maximum similarity in case of extended
+        # sitc values
+        return max([text_similarites(desc, oeance_title) for desc in sitc_extensions])
 
 
 @click.command()
@@ -41,17 +51,14 @@ def main(use_enriched_sitc: bool):
     for sitc_code, sitc_title in sitc_codes.items():
         total += 1
 
-        if total > 20:
-            pass
         # print(f"Findind a mapping for: '{sitc_title}'")
-
+        sitc_title_extendend = [sitc_title]
         if use_enriched_sitc:
             extending = sitc_enriched_codes.get(sitc_code, [])
             if extending: pass
                 # print(f'Extending "{sitc_title}" with: {extending}')
-            sitc_title_extendend = ".".join([sitc_title] + sitc_enriched_codes.get(sitc_code, []))
-        else:
-            sitc_title_extendend = sitc_title
+
+            sitc_title_extendend += sitc_enriched_codes.get(sitc_code, [])
 
         # hold a list of possible mapping candidates from oenace codes
         oenace_candidates = {
@@ -61,7 +68,10 @@ def main(use_enriched_sitc: bool):
 
         # step1: try to do exact name matching
         for oenace_code, oenace_title in oenace_codes.items():
-            text_similarity = text_similarites(sitc_title_extendend, oenace_title)
+            text_similarity = perform_text_similarity(
+                sitc_title=sitc_title, oeance_title=oenace_title, should_extend_sitc=use_enriched_sitc,
+                sitc_extensions=sitc_title_extendend
+            )
 
             if text_similarity > TEXT_SIMILARITY_THRESHOLD:
                 oenace_candidates['text_similarity'].append({
@@ -74,7 +84,7 @@ def main(use_enriched_sitc: bool):
             oenace_candidates['text_similarity'] = sort_by_similarity(oenace_candidates['text_similarity'])
 
         # step2: perform search using tf-idf weighting
-        tf_idf_results = perform_exploration(query=sitc_title_extendend, method=method, metadata=metadata)
+        tf_idf_results = perform_exploration(query='.'.join(sitc_title_extendend), method=method, metadata=metadata)
         if tf_idf_results:
             oenace_candidates['inverted_index'].extend([{
                 'oenace_code': item[0],
