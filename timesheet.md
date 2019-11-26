@@ -18,3 +18,4 @@
 | 16.11.2019  |  6h             | Fetch and preprocess data from correspondance tables. Setup for using them in the mapper |
 | 17.11.2019  |  6h             | Create the mapping for the _enriched_ sitc descriptions |
 | 23.11.2019  |  3h             | Try to improve the mapping by making text similarity 'smarter' |
+| 26.11.2019  |  3h             | Start CLI implementation |

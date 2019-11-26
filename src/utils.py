@@ -1,5 +1,5 @@
 import csv
-from typing import Dict
+from typing import Dict, List
 
 
 def load_csv(path_to_file: str) -> Dict:
@@ -22,3 +22,13 @@ def load_enriched_sitc_codes(path_to_file: str) -> Dict:
         csv_reader = csv.DictReader(csv_file)
         rows = {row['ID']: row["Mapping"].split('~') for row in csv_reader}
     return rows
+
+
+def find_matching_intersections(oeance_candidates: Dict) -> List:
+    """Returns a list of intersection from oenace_candidates of different approaches"""
+    all_matchings = []
+
+    for method, matchings in oeance_candidates.items():
+        all_matchings.append([(item['oenace_code'], item['oenace_title']) for item in matchings])
+
+    return list(set.intersection(*map(set, all_matchings)))

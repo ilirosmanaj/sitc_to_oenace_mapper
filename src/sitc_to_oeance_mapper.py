@@ -4,7 +4,7 @@ from typing import List
 from fuzzywuzzy import fuzz
 
 from inverted_index.querying import perform_exploration
-from src.utils import load_csv, load_enriched_sitc_codes
+from src.utils import load_csv, load_enriched_sitc_codes, find_matching_intersections
 from inverted_index.utils import load_metadata
 
 OENACE_FILE_PATH = '../data/preprocessed/oenace2008.csv'
@@ -38,7 +38,8 @@ def perform_text_similarity(sitc_title: str, oeance_title: str, should_extend_si
 
 @click.command()
 @click.option('-e', '--use_enriched_sitc', required=True, is_flag=True, default=True)
-def main(use_enriched_sitc: bool):
+@click.option('-v', '--verbose', required=True, is_flag=True, default=False)
+def main(use_enriched_sitc: bool, verbose: bool):
     oenace_codes = load_csv(OENACE_FILE_PATH)
     sitc_codes = load_csv(SITC2_FILE_PATH)
     sitc_enriched_codes = load_enriched_sitc_codes(SITC2_ENRICHED_FILE_PATH)
@@ -48,20 +49,25 @@ def main(use_enriched_sitc: bool):
 
     counter = 0
     total = 0
+    oenace_candidates = {}
+
     for sitc_code, sitc_title in sitc_codes.items():
         total += 1
 
-        # print(f"Findind a mapping for: '{sitc_title}'")
+        if verbose:
+            print(f"Findind a mapping for: '{sitc_title}'")
+
         sitc_title_extendend = [sitc_title]
         if use_enriched_sitc:
             extending = sitc_enriched_codes.get(sitc_code, [])
-            if extending: pass
-                # print(f'Extending "{sitc_title}" with: {extending}')
+
+            if extending and verbose:
+                print(f'Extending "{sitc_title}" with: {extending}')
 
             sitc_title_extendend += sitc_enriched_codes.get(sitc_code, [])
 
         # hold a list of possible mapping candidates from oenace codes
-        oenace_candidates = {
+        oenace_candidates[sitc_code] = {
             'text_similarity': [],
             'inverted_index': [],
         }
@@ -74,19 +80,19 @@ def main(use_enriched_sitc: bool):
             )
 
             if text_similarity > TEXT_SIMILARITY_THRESHOLD:
-                oenace_candidates['text_similarity'].append({
+                oenace_candidates[sitc_code]['text_similarity'].append({
                     'oenace_code': oenace_code,
                     'oenace_title': oenace_title,
                     'similarity': text_similarity,
                 })
         # sort by similiarty desc
-        if oenace_candidates['text_similarity']:
-            oenace_candidates['text_similarity'] = sort_by_similarity(oenace_candidates['text_similarity'])
+        if oenace_candidates[sitc_code]['text_similarity']:
+            oenace_candidates[sitc_code]['text_similarity'] = sort_by_similarity(oenace_candidates[sitc_code]['text_similarity'])
 
         # step2: perform search using tf-idf weighting
         tf_idf_results = perform_exploration(query='.'.join(sitc_title_extendend), method=method, metadata=metadata)
         if tf_idf_results:
-            oenace_candidates['inverted_index'].extend([{
+            oenace_candidates[sitc_code]['inverted_index'].extend([{
                 'oenace_code': item[0],
                 'oenace_title': oenace_codes[item[0]],
                 'similarity': item[1],
@@ -95,11 +101,8 @@ def main(use_enriched_sitc: bool):
         # step 4: a model
         # pprint(oenace_candidates)
         # find intersections from all steps
-        all_matchings = []
-        for method, matchings in oenace_candidates.items():
-            all_matchings.append([(item['oenace_code'], item['oenace_title']) for item in matchings])
+        intersections = find_matching_intersections(oenace_candidates[sitc_code])
 
-        intersections = set.intersection(*map(set, all_matchings))
         if intersections:
             counter += 1
             print(f"Findind a mapping for: '{sitc_title}'")
@@ -111,7 +114,16 @@ def main(use_enriched_sitc: bool):
             # print('Nothing found')
         # print(end='\n\n')
 
-    print(f'Found a total of {counter} mappings from {total}')
+    click.echo(f'Found a total of {counter} mappings from {total}')
+
+    # offer the cli
+    # TODO:
+    #   1. Offer what the user wants to do (continue manual mapping or else)
+    #   2. Foreach of the sitc codes, print them and ask the option to use one of the candidates or just
+    #      perform a manual search
+    #   3. Make this process robust (if the user quits on the meanwhile, at least store some results)
+    #   4. Mapping is optional (meaning that some sitc codes can have no mapping)
+    #   5. The mapping should be searchable (you can search by oeance code or title, and the list should be interactive)
 
 
 if __name__ == '__main__':
