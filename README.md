@@ -35,3 +35,9 @@ category is found, use it to find the _most fitting_ category
     * As part of this, a bunch of other text similarity API-s were considered (e.g. [Parallel Dots](https://www.paralleldots.com/), 
      [TwinWord](https://www.twinword.com/api/text-similarity.php), [RxNLP](https://rxnlp.com/text-similarity-api/#.XaL5uuYzY5k)),
      but all of them are too expensive for use.
+
+### Troubleshooting
+
+If tkinter does not work, install python3-tk via (tested on ubuntu only):
+
+`sudo apt-get install python3-tk`

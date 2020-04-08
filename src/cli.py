@@ -3,9 +3,11 @@ from typing import Dict
 
 from utils import find_matching_intersections
 
+PATH_TO_RESULTS = '../data/mapping_results/'
 
-def _input_is_yes(input: str):
-    return input in ['Y', 'y']
+
+def _input_is_yes(input_str: str):
+    return input_str in ['Y', 'y']
 
 
 def _store_best_candidates():
@@ -31,9 +33,11 @@ def cli(sitc_codes: Dict, oeance_codes: Dict, oeance_candidates: Dict, mapped_co
     mapping = {}
     if not _input_is_yes(response):
         _store_best_candidates()
-        click.echo('Exiting the process!')
+        click.echo('Stored the best candidates from what the automated process. Exiting now!')
         return
 
+    # iterate through each sitc_code and offer the user the option of choosing either an element from the intersection
+    # list, or manually choose one
     for sitc_code, sitc_title in sitc_codes.items():
         intersections = find_matching_intersections(oeance_candidates[sitc_code])
 
@@ -41,9 +45,11 @@ def cli(sitc_codes: Dict, oeance_codes: Dict, oeance_candidates: Dict, mapped_co
 
         if intersections:
             candidate_chosen = False
+
             while not candidate_chosen:
                 click.echo('The list of intersections available:')
 
+                # offer the user with the list of intersections
                 for i, val in enumerate(intersections):
                     click.echo(f'\t {i+1}. {val}')
 
@@ -60,3 +66,5 @@ def cli(sitc_codes: Dict, oeance_codes: Dict, oeance_candidates: Dict, mapped_co
                         click.echo('Please choose one of the offered candidates, not other numbers')
                 else:
                     choice = search_manually(oeance_codes)
+        else:
+            choice = search_manually()

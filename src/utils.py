@@ -25,7 +25,10 @@ def load_enriched_sitc_codes(path_to_file: str) -> Dict:
 
 
 def find_matching_intersections(oeance_candidates: Dict) -> List:
-    """Returns a list of intersection from oenace_candidates of different approaches"""
+    """
+    Returns a list of intersection from oenace_candidates of different approaches (currently using text_similarities
+    and inverted_index)
+    """
     all_matchings = []
 
     for method, matchings in oeance_candidates.items():
