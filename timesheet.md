@@ -20,3 +20,4 @@
 | 23.11.2019  |  3h             | Try to improve the mapping by making text similarity 'smarter' |
 | 26.11.2019  |  3h             | Start CLI implementation |
 | 08.04.2020  |  5h             | Start GUI implementation, remove CLI |
+| 09.04.2020  |  5h             | Continue GUI implementation. Implement event handling on listbox presses |

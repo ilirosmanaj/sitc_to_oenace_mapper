@@ -3,6 +3,7 @@ import click
 from typing import List
 from fuzzywuzzy import fuzz
 
+from gui import start_gui
 from inverted_index.querying import perform_exploration
 from src.utils import load_csv, load_enriched_sitc_codes, find_matching_intersections
 from inverted_index.utils import load_metadata
@@ -37,7 +38,7 @@ def perform_text_similarity(sitc_title: str, oeance_title: str, should_extend_si
 
 
 @click.command()
-@click.option('-e', '--use_enriched_sitc', required=True, is_flag=True, default=True)
+@click.option('-e', '--use_enriched_sitc', required=True, is_flag=True, default=False)
 @click.option('-v', '--verbose', required=True, is_flag=True, default=False)
 def main(use_enriched_sitc: bool, verbose: bool):
     oenace_codes = load_csv(OENACE_FILE_PATH)
@@ -53,6 +54,9 @@ def main(use_enriched_sitc: bool, verbose: bool):
 
     for sitc_code, sitc_title in sitc_codes.items():
         total += 1
+
+        if total > 2:
+            pass
 
         if verbose:
             print(f"Findind a mapping for: '{sitc_title}'")
@@ -121,6 +125,7 @@ def main(use_enriched_sitc: bool, verbose: bool):
 
     click.echo(f'Found a total of {counter} mappings from {total}')
 
+    start_gui(sitc_codes=sitc_codes, oeance_codes=oenace_codes, oenace_candidates=oenace_candidates)
     # offer the cli
     # TODO:
     #   1. Offer what the user wants to do (continue manual mapping or else)
