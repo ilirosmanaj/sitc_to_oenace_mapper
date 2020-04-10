@@ -21,3 +21,4 @@
 | 26.11.2019  |  3h             | Start CLI implementation |
 | 08.04.2020  |  5h             | Start GUI implementation, remove CLI |
 | 09.04.2020  |  5h             | Continue GUI implementation. Implement event handling on listbox presses |
+| 10.04.2020  |  4h             | Make GUI more intuitive. Add highlights, option to remove a mapping, adjust positions |

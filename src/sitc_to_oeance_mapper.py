@@ -56,7 +56,7 @@ def main(use_enriched_sitc: bool, verbose: bool):
         total += 1
 
         if total > 2:
-            pass
+            break
 
         if verbose:
             print(f"Findind a mapping for: '{sitc_title}'")
