@@ -22,3 +22,4 @@
 | 08.04.2020  |  5h             | Start GUI implementation, remove CLI |
 | 09.04.2020  |  5h             | Continue GUI implementation. Implement event handling on listbox presses |
 | 10.04.2020  |  4h             | Make GUI more intuitive. Add highlights, option to remove a mapping, adjust positions |
+| 11.04.2020  |  6h             | Added save and load results to the GUI elements. Restructure into modules |

@@ -1,26 +1,21 @@
+import csv
+
 import tkinter
 from tkinter import *
-import src.constants as const
+from tkinter import messagebox
+from tkinter.filedialog import askopenfilename
+
 from enum import Enum
 
+import gui.constants as const
+
+
 # TODO: - add a label showing how many items are mapped already
+# TODO: should we remove stuff from oenace list
+# TODO: on select of sitc item, add a 'currently selected' label
 
-
-def _format_sitc_item(key, value):
-    return f'{key} - {value}'
-
-
-def _get_code_from_text(text: str):
-    if not text:
-        return None
-
-    return text.split('-')[0].strip()
-
-
-EMPTY_CANDIDATES = {
-    'text_similarity': [],
-    'inverted_index': [],
-}
+from gui.csv_utils import CSVHandler
+from gui.utils import _format_sitc_item, _get_code_from_text
 
 
 class FiredFrom(Enum):
@@ -43,57 +38,79 @@ class App:
         self.root.geometry(f'{const.WINDOW_WIDTH}x{const.WINDOW_HEIGHT}')
 
         self.sitc_listbox = Listbox(self.root, selectmode=SINGLE, bg=const.COLOR_ITEM_EMPTY)
-        self.sitc_listbox.place(x=0, y=const.LISTBOX_DISTANCE_FROM_Y,
+        self.sitc_listbox.place(x=const.MARGIN_LEFT, y=const.LISTBOX_DISTANCE_FROM_Y,
                                 width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
         self.sitc_listbox.bind("<Button>", self.sitc_list_selection)
 
-        self.assign_scrollbar(self.sitc_listbox)
         self._fill_sitc_list()
 
-        self.label_search = Label(self.root, text='Search SITC')
-        self.label_search.place(x=0, y=0, width=120)
+        self.sitc_search_label = Label(self.root, text='SITC items')
+        self.sitc_search_label.place(x=const.MARGIN_LEFT, y=const.MARGIN_TOP, width=const.LABEL_WIDTH)
 
         self.sitc_search = Entry(self.root)
-        self.sitc_search.place(x=150, y=0, width=150)
+        self.sitc_search.place(x=const.MARGIN_LEFT + const.LABEL_WIDTH, y=const.MARGIN_TOP, width=const.ENTRY_WIDTH)
         self.sitc_search.bind("<Key>", self.on_sitc_search)
 
         self.sitc_candidates_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
-        self.sitc_candidates_listbox.place(x=const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES, y=const.LISTBOX_DISTANCE_FROM_Y,
+        self.sitc_candidates_listbox.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES,
+                                           y=const.LISTBOX_DISTANCE_FROM_Y,
                                            width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
         self.sitc_candidates_listbox.bind("<Double-Button>", self.candidates_doubleclick)
 
-        self.assign_scrollbar(self.sitc_candidates_listbox)
+        self.candidates_search_label = Label(self.root, text='Found Candidates')
+        self.candidates_search_label.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES
+                                             + (const.LISTBOX_WIDTH/3),
+                                           y=const.MARGIN_TOP,
+                                           width=const.LABEL_WIDTH)
 
         self.oenace_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
-        self.oenace_listbox.place(x=2*const.LISTBOX_WIDTH + 2 * const.DISTANCE_BETWEEN_LISTBOXES, y=const.LISTBOX_DISTANCE_FROM_Y,
+        self.oenace_listbox.place(x=const.MARGIN_LEFT + (2 * const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES),
+                                  y=const.LISTBOX_DISTANCE_FROM_Y,
                                   width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
         self.oenace_listbox.bind("<Double-Button>", self.oenace_list_doubleclick)
 
-        self.assign_scrollbar(self.oenace_listbox)
-
         self._fill_oeance_list()
 
-        self.label_search = Label(self.root, text='Search OEANCE')
-        self.label_search.place(x=500, y=0, width=120)
+        self.oenace_search_label = Label(self.root, text='Search OEANCE')
+        self.oenace_search_label.place(x=const.MARGIN_LEFT + (2*const.LISTBOX_WIDTH) +
+                                         (2 * const.DISTANCE_BETWEEN_LISTBOXES),
+                                       y=const.MARGIN_TOP, width=const.LABEL_WIDTH)
 
         self.oeance_search = Entry(self.root)
-        self.oeance_search.place(x=600, y=0, width=150)
+        self.oeance_search.place(x=const.MARGIN_LEFT + (2*const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES)
+                                   + const.LABEL_WIDTH,
+                                 y=const.MARGIN_TOP, width=const.ENTRY_WIDTH)
         self.oeance_search.bind("<Key>", self.on_oenace_search)
 
         self.current_mapping_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
-        self.current_mapping_listbox.place(x=0, y=2 * const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT,
+        self.current_mapping_listbox.place(x=const.MARGIN_LEFT,
+                                           y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT +
+                                             const.MAPPING_LISTBOX_MARGIN_TOP,
                                            width=const.MAPPING_LISTBOX_WIDTH,
                                            height=const.MAPPING_LISTBOX_HEIGHT)
         self.current_mapping_listbox.bind("<Button>", self.mapping_listbox_click)
-        self.assign_scrollbar(self.current_mapping_listbox)
 
         self.btn_delete_mapping = Button(self.root, text='Delete Mapping', command=self.remove_mapping)
         self.btn_delete_mapping.place(x=1600, y=800, width=150)
         self.update_current_mappings()
 
+        self.assign_scrollbars_to_listboxes()
+
         self.btn_save = Button(self.root, text='Save Mappings', command=self.save_mappings)
-        self.btn_save.place(x=700, y=0, width=150)
-        # self.btn_save.bind("<Key>", self.on_search)
+        self.btn_save.place(x=const.MARGIN_LEFT + const .MAPPING_LISTBOX_WIDTH - const.ENTRY_WIDTH,
+                            y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP +
+                            const.MAPPING_LISTBOX_HEIGHT,
+                            width=const.ENTRY_WIDTH)
+
+        self.btn_load_from_file = Button(self.root, text='Load Mapping', command=self.load_mappings)
+        self.btn_load_from_file.place(
+            x=const.MARGIN_LEFT + const .MAPPING_LISTBOX_WIDTH - (2 * const.ENTRY_WIDTH),
+            y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP +
+              const.MAPPING_LISTBOX_HEIGHT,
+            width=const.ENTRY_WIDTH
+        )
+
+        self.csv_handler = CSVHandler()
 
     def remove_mapping(self, *args):
         current_selection = self.current_mapping_listbox.get(ACTIVE)
@@ -104,36 +121,54 @@ class App:
         self.update_current_mappings()
         self.update_sitc_selections()
 
+    def load_mappings(self, *args):
+        Tk().withdraw()
+        filename = askopenfilename()
+
+        if not filename:
+            print('No file selected, returning')
+            return
+
+        self.mappings = self.csv_handler.load_results(filename)
+        self.update_current_mappings()
+        self.update_sitc_selections()
+
     def mapping_listbox_click(self, *args):
         self.btn_delete_mapping.lift()
-        print('Packing')
 
-    @staticmethod
-    def assign_scrollbar(listbox):
-        scrollbar_x = Scrollbar(listbox, orient="horizontal")
-        scrollbar_x.config(command=listbox.xview)
-        scrollbar_x.pack(side="bottom", fill="x")
-        listbox.config(xscrollcommand=scrollbar_x.set)
+    def assign_scrollbars_to_listboxes(self):
+        for listbox in [self.sitc_listbox, self.sitc_candidates_listbox, self.oenace_listbox,
+                        self.current_mapping_listbox]:
+            scrollbar_x = Scrollbar(listbox, orient="horizontal")
+            scrollbar_x.config(command=listbox.xview)
+            scrollbar_x.pack(side="bottom", fill="x")
+            listbox.config(xscrollcommand=scrollbar_x.set)
 
-        scrollbar_y = Scrollbar(listbox, orient="vertical")
-        scrollbar_y.config(command=listbox.yview)
-        scrollbar_y.pack(side="right", fill="y")
-        listbox.config(yscrollcommand=scrollbar_y.set)
+            scrollbar_y = Scrollbar(listbox, orient="vertical")
+            scrollbar_y.config(command=listbox.yview)
+            scrollbar_y.pack(side="right", fill="y")
+            listbox.config(yscrollcommand=scrollbar_y.set)
+
+            # TODO: do something for mousewheel, its counted as double button for some reason
+            listbox.bind("<MouseWheel>", scrollbar_y)
 
     def save_mappings(self):
-        print('Save button clicked')
-        self.update_sitc_selections()
+        self.csv_handler.store_results(self.mappings)
+        messagebox.showinfo(title='Mapping successfully saved', message='We have saved your mapping')
 
     def _fill_sitc_list(self, search_text: str = None):
         """Populates the listbox with corresponding sitc_items"""
         i = 0
         self.sitc_listbox.delete(0, 'end')
 
+        if search_text:
+            search_text = search_text.lower()
+
         for sitc_code, sitc_title in self.sitc_codes.items():
             if not search_text:
                 self.sitc_listbox.insert(i, _format_sitc_item(sitc_code, sitc_title))
 
-            elif sitc_title.lower().startswith(search_text.lower()):
+            elif search_text in sitc_title.lower() or search_text in sitc_code.lower():
                 self.sitc_listbox.insert(i, _format_sitc_item(sitc_code, sitc_title))
             i += 1
 
@@ -147,7 +182,7 @@ class App:
             return
 
         selected_code = _get_code_from_text(selected_sitc)
-        oenace_candidates = self.oenace_candidates.get(selected_code, EMPTY_CANDIDATES)
+        oenace_candidates = self.oenace_candidates.get(selected_code, const.EMPTY_CANDIDATES)
         all_candidates = oenace_candidates['text_similarity'] + oenace_candidates['inverted_index']
 
         self.sitc_candidates_listbox.delete(0, 'end')
@@ -164,9 +199,7 @@ class App:
 
             i += 1
 
-        # todo: if has a mapping, update the oenace listbox as well and scroll to that position
-        if mapped_oenace_code:
-            self.scroll_to_oenace_listbox_mapping(mapped_oenace_code)
+        self.scroll_to_oenace_listbox_mapping(mapped_oenace_code)
 
     def scroll_to_oenace_listbox_mapping(self, oenace_code):
         i = 0
@@ -185,12 +218,15 @@ class App:
         """Populates the listbox with corresponding sitc_items """
         self.oenace_listbox.delete(0, 'end')
 
+        if search_text:
+            search_text = search_text.lower()
+
         i = 0
         for oenace_code, oenace_title in self.oeance_codes.items():
             if not search_text:
                 self.oenace_listbox.insert(i, _format_sitc_item(oenace_code, oenace_title))
 
-            elif oenace_title.lower().startswith(search_text.lower()):
+            elif search_text in oenace_code.lower() or search_text in oenace_title.lower():
                 self.oenace_listbox.insert(i, _format_sitc_item(oenace_code, oenace_title))
 
             i += 1

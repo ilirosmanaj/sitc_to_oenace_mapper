@@ -1,9 +1,8 @@
-from pprint import pprint
 import click
 from typing import List
 from fuzzywuzzy import fuzz
 
-from gui import start_gui
+from gui.gui import start_gui
 from inverted_index.querying import perform_exploration
 from src.utils import load_csv, load_enriched_sitc_codes, find_matching_intersections
 from inverted_index.utils import load_metadata
