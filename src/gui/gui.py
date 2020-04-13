@@ -1,26 +1,21 @@
-import csv
-
 import tkinter
 from tkinter import *
 from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
 
-from enum import Enum
-
 import gui.constants as const
 
-
-# TODO: - add a label showing how many items are mapped already
-# TODO: should we remove stuff from oenace list
+# TODO: should we remove stuff from oenace list?
 # TODO: on select of sitc item, add a 'currently selected' label
+# TODO: show a toast when a mapping is added
+# TODO: show a toast when a mapping is deleted
+# TODO: fix delete mapping behaviour
+# TODO: discuss the file format for storing
+
+from gui.classes import FiredFrom
 
 from gui.csv_utils import CSVHandler
-from gui.utils import _format_sitc_item, _get_code_from_text
-
-
-class FiredFrom(Enum):
-    OENACE = 'oenace'
-    CANDIDATES = 'candidates'
+from gui.utils import format_sitc_item, get_code_from_text, get_sitc_code_from_mapping_text
 
 
 class App:
@@ -40,7 +35,7 @@ class App:
         self.sitc_listbox = Listbox(self.root, selectmode=SINGLE, bg=const.COLOR_ITEM_EMPTY)
         self.sitc_listbox.place(x=const.MARGIN_LEFT, y=const.LISTBOX_DISTANCE_FROM_Y,
                                 width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
-        self.sitc_listbox.bind("<Button>", self.sitc_list_selection)
+        self.sitc_listbox.bind("<ButtonRelease-1>", self.sitc_list_selection)
 
         self._fill_sitc_list()
 
@@ -49,13 +44,17 @@ class App:
 
         self.sitc_search = Entry(self.root)
         self.sitc_search.place(x=const.MARGIN_LEFT + const.LABEL_WIDTH, y=const.MARGIN_TOP, width=const.ENTRY_WIDTH)
-        self.sitc_search.bind("<Key>", self.on_sitc_search)
+        self.sitc_search.bind("<KeyRelease>", self.on_sitc_search)
+
+        self.sitc_info_label = Label(self.root, text='', font=("Helvetica", 10))
+        self.sitc_info_label.place(x=const.MARGIN_LEFT + const.LABEL_WIDTH + const.ENTRY_WIDTH, y=const.MARGIN_TOP,
+                                   width=const.LABEL_WIDTH)
 
         self.sitc_candidates_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
         self.sitc_candidates_listbox.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES,
                                            y=const.LISTBOX_DISTANCE_FROM_Y,
                                            width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
-        self.sitc_candidates_listbox.bind("<Double-Button>", self.candidates_doubleclick)
+        self.sitc_candidates_listbox.bind("<Double-Button-1>", self.candidates_doubleclick)
 
         self.candidates_search_label = Label(self.root, text='Found Candidates')
         self.candidates_search_label.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES
@@ -67,7 +66,7 @@ class App:
         self.oenace_listbox.place(x=const.MARGIN_LEFT + (2 * const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES),
                                   y=const.LISTBOX_DISTANCE_FROM_Y,
                                   width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
-        self.oenace_listbox.bind("<Double-Button>", self.oenace_list_doubleclick)
+        self.oenace_listbox.bind("<Double-Button-1>", self.oenace_list_doubleclick)
 
         self._fill_oeance_list()
 
@@ -80,7 +79,12 @@ class App:
         self.oeance_search.place(x=const.MARGIN_LEFT + (2*const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES)
                                    + const.LABEL_WIDTH,
                                  y=const.MARGIN_TOP, width=const.ENTRY_WIDTH)
-        self.oeance_search.bind("<Key>", self.on_oenace_search)
+        self.oeance_search.bind("<KeyRelease>", self.on_oenace_search)
+
+        self.oenace_info_label = Label(self.root, text='', font=("Helvetica", 10))
+        self.oenace_info_label.place(x=const.MARGIN_LEFT + (2*const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES)
+                                        + const.LABEL_WIDTH + const.ENTRY_WIDTH, y=const.MARGIN_TOP,
+                                   width=const.LABEL_WIDTH)
 
         self.current_mapping_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
         self.current_mapping_listbox.place(x=const.MARGIN_LEFT,
@@ -90,9 +94,29 @@ class App:
                                            height=const.MAPPING_LISTBOX_HEIGHT)
         self.current_mapping_listbox.bind("<Button>", self.mapping_listbox_click)
 
+        self.mapping_search_label = Label(self.root, text='Mapped items')
+        self.mapping_search_label.place(x=const.MARGIN_LEFT,
+                                        y=const.MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP,
+                                        width=const.LABEL_WIDTH)
+
+        self.mapping_search = Entry(self.root)
+        self.mapping_search.place(
+            x=const.MARGIN_LEFT + const.LABEL_WIDTH,
+            y=const.MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP,
+            width=const.ENTRY_WIDTH
+        )
+        self.mapping_search.bind("<KeyRelease>", self.on_mapping_search)
+
+        self.currently_mapped_info_label = Label(self.root, text='')
+        self.currently_mapped_info_label.place(
+            x=const.MARGIN_LEFT + (const.MAPPING_LISTBOX_WIDTH/2) - (const.LABEL_WIDTH / 2),
+            y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP - 25,
+            width=const.LABEL_WIDTH
+        )
+
         self.btn_delete_mapping = Button(self.root, text='Delete Mapping', command=self.remove_mapping)
         self.btn_delete_mapping.place(x=1600, y=800, width=150)
-        self.update_current_mappings()
+        self.fill_current_mappings_listbox()
 
         self.assign_scrollbars_to_listboxes()
 
@@ -112,13 +136,28 @@ class App:
 
         self.csv_handler = CSVHandler()
 
+    def update_sitc_items_shown(self):
+        sitc_total = len(self.sitc_codes)
+        showing = self.sitc_listbox.size()
+        self.sitc_info_label['text'] = f'Showing {showing}/{sitc_total}'
+
+    def update_oenace_items_shown(self):
+        oenace_total = len(self.oeance_codes)
+        showing = self.oenace_listbox.size()
+        self.oenace_info_label['text'] = f'Showing {showing}/{oenace_total}'
+
+    def update_mapped_items_counts(self):
+        sitc_total = len(self.sitc_codes)
+        mapped = len(self.mappings)
+        self.currently_mapped_info_label['text'] = f'Mapped {mapped}/{sitc_total}'
+
     def remove_mapping(self, *args):
         current_selection = self.current_mapping_listbox.get(ACTIVE)
         current_sitc_code = current_selection.split('->')[0].split('-')[0].strip()
         self.mappings.pop(current_sitc_code)
         self.btn_delete_mapping.lower()
 
-        self.update_current_mappings()
+        self.fill_current_mappings_listbox()
         self.update_sitc_selections()
 
     def load_mappings(self, *args):
@@ -130,7 +169,7 @@ class App:
             return
 
         self.mappings = self.csv_handler.load_results(filename)
-        self.update_current_mappings()
+        self.fill_current_mappings_listbox()
         self.update_sitc_selections()
 
     def mapping_listbox_click(self, *args):
@@ -149,9 +188,6 @@ class App:
             scrollbar_y.pack(side="right", fill="y")
             listbox.config(yscrollcommand=scrollbar_y.set)
 
-            # TODO: do something for mousewheel, its counted as double button for some reason
-            listbox.bind("<MouseWheel>", scrollbar_y)
-
     def save_mappings(self):
         self.csv_handler.store_results(self.mappings)
         messagebox.showinfo(title='Mapping successfully saved', message='We have saved your mapping')
@@ -166,22 +202,14 @@ class App:
 
         for sitc_code, sitc_title in self.sitc_codes.items():
             if not search_text:
-                self.sitc_listbox.insert(i, _format_sitc_item(sitc_code, sitc_title))
+                self.sitc_listbox.insert(i, format_sitc_item(sitc_code, sitc_title))
 
             elif search_text in sitc_title.lower() or search_text in sitc_code.lower():
-                self.sitc_listbox.insert(i, _format_sitc_item(sitc_code, sitc_title))
+                self.sitc_listbox.insert(i, format_sitc_item(sitc_code, sitc_title))
             i += 1
 
-    def update_candidates_list(self):
+    def update_candidates_list(self, selected_code):
         """Populates the listbox with corresponding sitc_items """
-        # TODO (Ilir): this gets the last selected item, not the one that fired the event. Find a way to fix it
-        selected_sitc = self.sitc_listbox.get(ACTIVE)
-
-        # do not fill the list of candidates if nothing is selected
-        if not selected_sitc:
-            return
-
-        selected_code = _get_code_from_text(selected_sitc)
         oenace_candidates = self.oenace_candidates.get(selected_code, const.EMPTY_CANDIDATES)
         all_candidates = oenace_candidates['text_similarity'] + oenace_candidates['inverted_index']
 
@@ -190,12 +218,14 @@ class App:
         mapped_oenace_code = self.mappings.get(selected_code)
         i = 0
         for item in all_candidates:
-            self.sitc_candidates_listbox.insert(i, _format_sitc_item(item['oenace_code'], item['oenace_title']))
+            self.sitc_candidates_listbox.insert(i, format_sitc_item(item['oenace_code'], item['oenace_title']))
 
             # if this sitc item has a mapping to an oenace code, highlight it
             if mapped_oenace_code == item['oenace_code']:
                 self.sitc_candidates_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_MAPPED_CODE})
-                self.sitc_candidates_listbox.yview_scroll(i, UNITS)
+                self.sitc_candidates_listbox.see(i)
+            else:
+                self.sitc_candidates_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_EMPTY})
 
             i += 1
 
@@ -204,13 +234,26 @@ class App:
     def scroll_to_oenace_listbox_mapping(self, oenace_code):
         i = 0
         for item in self.oenace_listbox.get(0, 'end'):
-            item_code = _get_code_from_text(item)
+            item_code = get_code_from_text(item)
 
             if item_code == oenace_code:
                 self.oenace_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_MAPPED_CODE})
-                self.oenace_listbox.yview_scroll(i, UNITS)
+                self.oenace_listbox.see(i)
             else:
                 self.oenace_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_EMPTY})
+
+            i += 1
+
+    def update_mapping_listbox(self, sitc_code):
+        i = 0
+        for item in self.current_mapping_listbox.get(0, 'end'):
+            code = get_sitc_code_from_mapping_text(item)
+
+            if sitc_code == code:
+                self.current_mapping_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_MAPPED_CODE})
+                self.current_mapping_listbox.see(i)
+            else:
+                self.current_mapping_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_EMPTY})
 
             i += 1
 
@@ -224,14 +267,14 @@ class App:
         i = 0
         for oenace_code, oenace_title in self.oeance_codes.items():
             if not search_text:
-                self.oenace_listbox.insert(i, _format_sitc_item(oenace_code, oenace_title))
+                self.oenace_listbox.insert(i, format_sitc_item(oenace_code, oenace_title))
 
             elif search_text in oenace_code.lower() or search_text in oenace_title.lower():
-                self.oenace_listbox.insert(i, _format_sitc_item(oenace_code, oenace_title))
+                self.oenace_listbox.insert(i, format_sitc_item(oenace_code, oenace_title))
 
             i += 1
 
-    def update_current_mappings(self):
+    def fill_current_mappings_listbox(self, search_text: str = None):
         """Populates the listbox with corresponding sitc_items """
         self.current_mapping_listbox.delete(0, 'end')
 
@@ -239,28 +282,50 @@ class App:
         for sitc_code, oenace_code in self.mappings.items():
             sitc_item = self.sitc_codes.get(sitc_code)
             oenace_item = self.oeance_codes.get(oenace_code)
-            formatted = f'{_format_sitc_item(sitc_code, sitc_item)} -> {_format_sitc_item(oenace_code, oenace_item)}'
-            self.current_mapping_listbox.insert(i, formatted)
+            formatted = f'{format_sitc_item(sitc_code, sitc_item)} -> {format_sitc_item(oenace_code, oenace_item)}'
+
+            if not search_text:
+                self.current_mapping_listbox.insert(i, formatted)
+            elif search_text in formatted:
+                self.current_mapping_listbox.insert(i, formatted)
+
             i += 1
+
+        # scroll to the end
+        self.current_mapping_listbox.see(i)
+
+        self.update_mapped_items_counts()
+
+    def on_mapping_search(self, key):
+        self.fill_current_mappings_listbox(self.mapping_search.get())
 
     def on_sitc_search(self, key):
         self._fill_sitc_list(self.sitc_search.get())
+        self.update_sitc_items_shown()
+        self.update_sitc_selections()
 
     def on_oenace_search(self, key):
         self._fill_oeance_list(self.oeance_search.get())
+        self.update_oenace_items_shown()
 
     def sitc_list_selection(self, *args):
         """
         Handle selection of an item in sitc list.
         If the selected item has already a chosen mapping, preselect it. If not, do nothing
         """
-        self.update_candidates_list()
+        index = self.sitc_listbox.curselection()[0]
+        selected_sitc = self.sitc_listbox.get(index)
+
+        sitc_code = get_code_from_text(selected_sitc)
+
+        self.update_candidates_list(sitc_code)
+        self.update_mapping_listbox(sitc_code)
 
     def update_sitc_selections(self):
         """Go through sitc items and if it has a mapping, highlight it with grey on the listbox"""
         i = 0
         for item in self.sitc_listbox.get(0, 'end'):
-            sitc_code = _get_code_from_text(item)
+            sitc_code = get_code_from_text(item)
 
             if sitc_code in self.mappings.keys():
                 self.sitc_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_HAS_SELECTION})
@@ -284,14 +349,14 @@ class App:
             print('No sitc item selected. Returning from mapping')
             return
 
-        sitc_code = _get_code_from_text(sitc_item)
+        sitc_code = get_code_from_text(sitc_item)
 
         if fired_from == FiredFrom.OENACE:
             oenace_item = self.oenace_listbox.get(ACTIVE)
-            code = _get_code_from_text(oenace_item)
+            code = get_code_from_text(oenace_item)
         else:
             oenace_candidate = self.sitc_candidates_listbox.get(ACTIVE)
-            code = _get_code_from_text(oenace_candidate)
+            code = get_code_from_text(oenace_candidate)
 
         if not code:
             print('Code empty, something was wrongly handled')
@@ -301,7 +366,7 @@ class App:
         self.mappings.update({
             sitc_code: code
         })
-        self.update_current_mappings()
+        self.fill_current_mappings_listbox()
         self.update_sitc_selections()
 
     def start(self):
