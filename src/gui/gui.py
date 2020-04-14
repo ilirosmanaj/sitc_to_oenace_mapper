@@ -6,10 +6,8 @@ from tkinter.filedialog import askopenfilename
 import gui.constants as const
 
 # TODO: should we remove stuff from oenace list?
-# TODO: on select of sitc item, add a 'currently selected' label
 # TODO: show a toast when a mapping is added
 # TODO: show a toast when a mapping is deleted
-# TODO: fix delete mapping behaviour
 # TODO: discuss the file format for storing
 
 from gui.classes import FiredFrom
@@ -33,7 +31,7 @@ class App:
         self.root.geometry(f'{const.WINDOW_WIDTH}x{const.WINDOW_HEIGHT}')
 
         self.sitc_listbox = Listbox(self.root, selectmode=SINGLE, bg=const.COLOR_ITEM_EMPTY)
-        self.sitc_listbox.place(x=const.MARGIN_LEFT, y=const.LISTBOX_DISTANCE_FROM_Y,
+        self.sitc_listbox.place(x=const.MARGIN_LEFT, y=const.LISTBOX_MARGIN_TOP,
                                 width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
         self.sitc_listbox.bind("<ButtonRelease-1>", self.sitc_list_selection)
 
@@ -52,9 +50,10 @@ class App:
 
         self.sitc_candidates_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
         self.sitc_candidates_listbox.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES,
-                                           y=const.LISTBOX_DISTANCE_FROM_Y,
+                                           y=const.LISTBOX_MARGIN_TOP,
                                            width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
         self.sitc_candidates_listbox.bind("<Double-Button-1>", self.candidates_doubleclick)
+        self.sitc_candidates_listbox.bind("<ButtonRelease-1>", self.hide_delete_mapping_button)
 
         self.candidates_search_label = Label(self.root, text='Found Candidates')
         self.candidates_search_label.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES
@@ -64,9 +63,10 @@ class App:
 
         self.oenace_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
         self.oenace_listbox.place(x=const.MARGIN_LEFT + (2 * const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES),
-                                  y=const.LISTBOX_DISTANCE_FROM_Y,
+                                  y=const.LISTBOX_MARGIN_TOP,
                                   width=const.LISTBOX_WIDTH, height=const.LISTBOX_HEIGHT)
         self.oenace_listbox.bind("<Double-Button-1>", self.oenace_list_doubleclick)
+        self.oenace_listbox.bind("<ButtonRelease-1>", self.hide_delete_mapping_button)
 
         self._fill_oeance_list()
 
@@ -75,11 +75,11 @@ class App:
                                          (2 * const.DISTANCE_BETWEEN_LISTBOXES),
                                        y=const.MARGIN_TOP, width=const.LABEL_WIDTH)
 
-        self.oeance_search = Entry(self.root)
-        self.oeance_search.place(x=const.MARGIN_LEFT + (2*const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES)
+        self.oenace_search = Entry(self.root)
+        self.oenace_search.place(x=const.MARGIN_LEFT + (2 * const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES)
                                    + const.LABEL_WIDTH,
                                  y=const.MARGIN_TOP, width=const.ENTRY_WIDTH)
-        self.oeance_search.bind("<KeyRelease>", self.on_oenace_search)
+        self.oenace_search.bind("<KeyRelease>", self.on_oenace_search)
 
         self.oenace_info_label = Label(self.root, text='', font=("Helvetica", 10))
         self.oenace_info_label.place(x=const.MARGIN_LEFT + (2*const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES)
@@ -88,11 +88,11 @@ class App:
 
         self.current_mapping_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
         self.current_mapping_listbox.place(x=const.MARGIN_LEFT,
-                                           y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT +
+                                           y=const.LISTBOX_MARGIN_TOP + const.LISTBOX_HEIGHT +
                                              const.MAPPING_LISTBOX_MARGIN_TOP,
                                            width=const.MAPPING_LISTBOX_WIDTH,
                                            height=const.MAPPING_LISTBOX_HEIGHT)
-        self.current_mapping_listbox.bind("<Button>", self.mapping_listbox_click)
+        self.current_mapping_listbox.bind("<ButtonRelease-1>", self.mapping_listbox_click)
 
         self.mapping_search_label = Label(self.root, text='Mapped items')
         self.mapping_search_label.place(x=const.MARGIN_LEFT,
@@ -110,28 +110,46 @@ class App:
         self.currently_mapped_info_label = Label(self.root, text='')
         self.currently_mapped_info_label.place(
             x=const.MARGIN_LEFT + (const.MAPPING_LISTBOX_WIDTH/2) - (const.LABEL_WIDTH / 2),
-            y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP - 25,
+            y=const.LISTBOX_MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP -
+              const.MAPPING_LISTBOX_ITEMS_ON_TOP,
             width=const.LABEL_WIDTH
         )
 
         self.btn_delete_mapping = Button(self.root, text='Delete Mapping', command=self.remove_mapping)
-        self.btn_delete_mapping.place(x=1600, y=800, width=150)
+        self.btn_delete_mapping.place(
+            x=const.MARGIN_LEFT + const.MAPPING_LISTBOX_WIDTH - const.BUTTON_WIDTH,
+            y=const.LISTBOX_MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP -
+              const.MAPPING_LISTBOX_ITEMS_ON_TOP,
+            width=const.BUTTON_WIDTH,
+            height=30,
+        )
+
+        self.lbl_ghost = Label(self.root, text=' ' * 14)
+        self.lbl_ghost.place(
+            x=const.MARGIN_LEFT + const.MAPPING_LISTBOX_WIDTH - const.BUTTON_WIDTH,
+            y=const.LISTBOX_MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP -
+              const.MAPPING_LISTBOX_ITEMS_ON_TOP,
+            width=const.BUTTON_WIDTH,
+            height=30
+        )
+        self.lbl_ghost.lift()
+
         self.fill_current_mappings_listbox()
 
         self.assign_scrollbars_to_listboxes()
 
         self.btn_save = Button(self.root, text='Save Mappings', command=self.save_mappings)
-        self.btn_save.place(x=const.MARGIN_LEFT + const .MAPPING_LISTBOX_WIDTH - const.ENTRY_WIDTH,
-                            y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP +
-                            const.MAPPING_LISTBOX_HEIGHT,
-                            width=const.ENTRY_WIDTH)
+        self.btn_save.place(x=const.MARGIN_LEFT + const .MAPPING_LISTBOX_WIDTH - const.BUTTON_WIDTH,
+                            y=const.LISTBOX_MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP +
+                              const.MAPPING_LISTBOX_HEIGHT,
+                            width=const.BUTTON_WIDTH)
 
         self.btn_load_from_file = Button(self.root, text='Load Mapping', command=self.load_mappings)
         self.btn_load_from_file.place(
-            x=const.MARGIN_LEFT + const .MAPPING_LISTBOX_WIDTH - (2 * const.ENTRY_WIDTH),
-            y=const.LISTBOX_DISTANCE_FROM_Y + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP +
+            x=const.MARGIN_LEFT + const .MAPPING_LISTBOX_WIDTH - (2 * const.BUTTON_WIDTH),
+            y=const.LISTBOX_MARGIN_TOP + const.LISTBOX_HEIGHT + const.MAPPING_LISTBOX_MARGIN_TOP +
               const.MAPPING_LISTBOX_HEIGHT,
-            width=const.ENTRY_WIDTH
+            width=const.BUTTON_WIDTH
         )
 
         self.csv_handler = CSVHandler()
@@ -151,12 +169,16 @@ class App:
         mapped = len(self.mappings)
         self.currently_mapped_info_label['text'] = f'Mapped {mapped}/{sitc_total}'
 
+    def hide_delete_mapping_button(self, *args):
+        self.btn_delete_mapping.lower()
+        self.lbl_ghost.lift()
+
     def remove_mapping(self, *args):
         current_selection = self.current_mapping_listbox.get(ACTIVE)
         current_sitc_code = current_selection.split('->')[0].split('-')[0].strip()
         self.mappings.pop(current_sitc_code)
-        self.btn_delete_mapping.lower()
 
+        self.hide_delete_mapping_button()
         self.fill_current_mappings_listbox()
         self.update_sitc_selections()
 
@@ -174,6 +196,7 @@ class App:
 
     def mapping_listbox_click(self, *args):
         self.btn_delete_mapping.lift()
+        self.lbl_ghost.lower()
 
     def assign_scrollbars_to_listboxes(self):
         for listbox in [self.sitc_listbox, self.sitc_candidates_listbox, self.oenace_listbox,
@@ -189,8 +212,9 @@ class App:
             listbox.config(yscrollcommand=scrollbar_y.set)
 
     def save_mappings(self):
-        self.csv_handler.store_results(self.mappings)
-        messagebox.showinfo(title='Mapping successfully saved', message='We have saved your mapping')
+        stored_at = self.csv_handler.store_results(self.mappings)
+        messagebox.showinfo(title='Mapping successfully saved', message=f'We have saved your mapping in '
+                                                                        f'location {stored_at}')
 
     def _fill_sitc_list(self, search_text: str = None):
         """Populates the listbox with corresponding sitc_items"""
@@ -305,7 +329,12 @@ class App:
         self.update_sitc_selections()
 
     def on_oenace_search(self, key):
-        self._fill_oeance_list(self.oeance_search.get())
+        self._fill_oeance_list(self.oenace_search.get())
+        self.update_oenace_items_shown()
+
+    def clear_oenace_searches(self):
+        self.oenace_search.delete(0, 'end')
+        self._fill_oeance_list()
         self.update_oenace_items_shown()
 
     def sitc_list_selection(self, *args):
@@ -313,6 +342,13 @@ class App:
         Handle selection of an item in sitc list.
         If the selected item has already a chosen mapping, preselect it. If not, do nothing
         """
+        # on item selection, check if oenace searchbox has already some filters. If yes delete them
+        if self.oenace_search.get():
+            self.clear_oenace_searches()
+        # hide button if shown
+        self.hide_delete_mapping_button()
+
+
         index = self.sitc_listbox.curselection()[0]
         selected_sitc = self.sitc_listbox.get(index)
 

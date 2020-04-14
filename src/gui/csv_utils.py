@@ -1,7 +1,7 @@
 import csv
 from datetime import datetime
 
-PATH_TO_MAPPING = '../data/mapping_results/'
+PATH_TO_MAPPING = '../data/mapping_results'
 
 
 class CSVHandler:
@@ -11,14 +11,15 @@ class CSVHandler:
 
     def store_results(self, mapping_results: dict):
         file_name = f'mapping-{datetime.now().isoformat()}'
+        full_path = f'{self.path_to_results}/{file_name}.csv'
 
-        with open(f'{self.path_to_results}/{file_name}.csv', 'w') as csvfile:
+        with open(full_path, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=self.column_names)
             writer.writeheader()
 
             for sitc_code, oenace_code in mapping_results.items():
                 writer.writerow({'SITC_CODE': sitc_code, 'OENACE_CODE': oenace_code})
-        return True
+        return full_path
 
     def load_results(self, file_name) -> dict:
         mapping = {}

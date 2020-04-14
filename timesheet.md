@@ -24,3 +24,4 @@
 | 10.04.2020  |  4h             | Make GUI more intuitive. Add highlights, option to remove a mapping, adjust positions |
 | 11.04.2020  |  6h             | Added save and load results to the GUI elements. Restructure into modules |
 | 13.04.2020  |  7h             | Add search entries for all listboxes, highlight mapped elements, show progress |
+| 14.04.2020  |  5h             | Fix delete mapping functionality. Be more verbose on mapping save  |
