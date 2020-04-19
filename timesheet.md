@@ -25,3 +25,6 @@
 | 11.04.2020  |  6h             | Added save and load results to the GUI elements. Restructure into modules |
 | 13.04.2020  |  7h             | Add search entries for all listboxes, highlight mapped elements, show progress |
 | 14.04.2020  |  5h             | Fix delete mapping functionality. Be more verbose on mapping save  |
+| 15.04.2020  |  5h             | Fix key error and stemming in the TF-IDF weighting  |
+| 18.04.2020  |  7h             | Working on the report, write problem description and text similiarity part |
+| 19.04.2020  |  7h             | Report: inverted index and comparison charts |

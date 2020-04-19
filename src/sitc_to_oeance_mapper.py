@@ -44,7 +44,7 @@ def main(use_enriched_sitc: bool, verbose: bool):
     sitc_codes = load_csv(SITC2_FILE_PATH)
     sitc_enriched_codes = load_enriched_sitc_codes(SITC2_ENRICHED_FILE_PATH)
 
-    method = 'lemmatizing'
+    method = 'stemming'
     metadata = load_metadata(method)
 
     counter = 0
@@ -76,7 +76,6 @@ def main(use_enriched_sitc: bool, verbose: bool):
             'text_similarity': [],
             'inverted_index': [],
         }
-
         # step1: try to do exact name matching
         for oenace_code, oenace_title in oenace_codes.items():
             text_similarity = perform_text_similarity(
@@ -123,16 +122,7 @@ def main(use_enriched_sitc: bool, verbose: bool):
         # print(end='\n\n')
 
     click.echo(f'Found a total of {counter} mappings from {total}')
-
     start_gui(sitc_codes=sitc_codes, oeance_codes=oenace_codes, oenace_candidates=oenace_candidates)
-    # offer the cli
-    # TODO:
-    #   1. Offer what the user wants to do (continue manual mapping or else)
-    #   2. Foreach of the sitc codes, print them and ask the option to use one of the candidates or just
-    #      perform a manual search
-    #   3. Make this process robust (if the user quits on the meanwhile, at least store some results)
-    #   4. Mapping is optional (meaning that some sitc codes can have no mapping)
-    #   5. The mapping should be searchable (you can search by oeance code or title, and the list should be interactive)
 
 
 if __name__ == '__main__':

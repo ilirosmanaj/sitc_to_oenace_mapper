@@ -1,0 +1,5 @@
+method,enriched,total_mapped_pct,avg_length
+lemmatizing,True,93.89,17.68
+stemming,True,94.15,18.78
+lemmatizing,False,88.8,14.67
+stemming,False,89.19,15.98
