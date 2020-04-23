@@ -6,6 +6,7 @@ from src.utils import load_csv, load_enriched_sitc_codes, find_matching_intersec
 from inverted_index.utils import load_metadata
 from text_similarity.text_similarity import perform_text_similarity
 from word_embeddings.word2vec import Word2VecSimilarity
+from datetime import datetime
 
 OENACE_FILE_PATH = '../data/preprocessed/oenace2008.csv'
 SITC2_FILE_PATH = '../data/preprocessed/sitc2.csv'
@@ -29,6 +30,7 @@ def main(use_enriched_sitc: bool, verbose: bool):
     total = 0
     oenace_candidates = {}
 
+    print(f'Start time: {datetime.now().isoformat()}')
     for sitc_code, sitc_title in sitc_codes.items():
         total += 1
 
@@ -122,6 +124,8 @@ def main(use_enriched_sitc: bool, verbose: bool):
         print(f'Done {total}/{len(sitc_codes)} so far')
 
     click.echo(f'Found a total of {counter} mappings from {total}')
+
+    print(f'End time: {datetime.now().isoformat()}')
 
     start_gui(sitc_codes=sitc_codes, oeance_codes=oenace_codes, oenace_candidates=oenace_candidates)
 

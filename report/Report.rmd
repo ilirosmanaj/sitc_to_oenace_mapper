@@ -2,7 +2,7 @@
 title: "SITC2 to ÖNACE mapper"
 subtitle: "194.047 Interdisciplinary Project in Data Science"
 author: "Ilir Osmanaj"
-date: "30-04-2020"
+date: "23.04.2020"
 output:
   rmarkdown::pdf_document:
     fig_caption: yes        
@@ -304,6 +304,8 @@ An example of Word2Vec for the word 'Sweeden', would output in order of proximit
   
 As seen, this approximity is learned by the words usages in similar contexts - and it's not that bad.
 
+Word2Vec was developed by Google and for this mapping problem, we have used the pre-trained Word2Vec embedding built on top of Google News data, which was trained on over 3 million words and phrases. 
+
 While comparing two sentences, each of the words is compared in terms of distance, and for this use case the Word Movers Distance has been used.
 
 ### Word Movers Distance
@@ -339,8 +341,25 @@ for the final result we use intersection of all candidates from all approaches, 
 
 ## Mapping Results
 
-TODO: write something about the results. How many items are mapped? why so few? how long it takes etc. Show examples when we find mapping, show that sometimes we fail because
-      of no intersections etc
+As most of the information retrieval tasks, this task takes slight a bit of time. In average, the runtime is about 35 minutes. The most time consuming process here is the comparison using word2vec, since it loads all te vectors and performs
+word movers distance on them. If raw data would have been used, then the time would have been shorter, but it would be a trade between execution time and quality of results.
+
+The problem of automated mapping of SITC2 items to ÖNACE is something that we are not aware that was tried by someone else. Given that, there is no real state of the art or some comparison point with which our
+mapper could be compared against. Yet, mapping results can be evaluated by the total number mapped items, whether those mappings make sense or not.
+
+Oveall, there are 786 SITC2 items of level four and 615 ÖNACE items of the same level. After all SITC2 items go through the mapping procedure and the intersection of all candidates is performed, 
+we endup with ~135 items automatically mapped. These automatically mapped candidates come as an ouput of three different approaches, therefore they usually make totally sense. Some examples:
+
+  * SITC2 description: "Macaroni, spaghetti and similar products"
+    * Mapped ÖNACE: "Manufacture of macaroni, noodles, couscous and similar farinaceous products"
+  * SITC2 description: "Poultry, dead (i.e., fowls, ducks, geese, turkeys and guinea fowls) and edible offal thereof (except liver), fresh, chilled or frozen"
+    * Mapped ÖNACE: "Production of meat and poultry meat products"
+  * SITC2 description: "Ores and concentrates of uranium and thorium"
+    * Mapped ÖNACE: "Mining of uranium and thorium ores" 
+
+The biggest issue here is that there exist plenty of SITC2 items, which do not have any reasonable mapping candidate in the ÖNACE list. This is either that this category of industry is not present in ÖNACE list or its modified in a way
+that the category descriptions no longer represent the same things. This is expected, as these mappings not necessarily were meant to fit to each other.
+
 
 ### Graphical User Interface
 
@@ -357,3 +376,13 @@ knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mappe
 All in all, there is a list of SITC2 items in the left. When an item is clicked, it shows the found candidates and the list of ÖNACE items is always there, to manually search and map it.
 
 ## Conclusions
+
+As a Natural Language Processing problem, this problem is very interesting, especially considering the fact that the instances considered here were standard descriptions used in economy - which are meant for worldwide usage. Given this,
+it normally should have meant that these descriptions are straightforward and easy comparable between different standards. Unfortunately, it did not turn out to be like that.
+
+Throughout development there were some failed approaches, but overall, the idea of using 'Ensemble Learning' like approach was a good step to go and brings insurance on the output of the mapping. Also, without data enhancement the approaches
+used would have ended up having too less data, therefore nothing to learn from. Stil, data enhancement was avaiable only in the SITC2 items, not on the ÖNACE one.
+
+Since this problem was unique and even though three different mapping approaches are used by the mapper, there is plenty of place for improvement and human help. For future work this would mean defining precise evaluation metrics, gather more data 
+from the field of economics (so that our models would be more economic-oriented), try out different voting strategies for the ensemble learning etc.
+
