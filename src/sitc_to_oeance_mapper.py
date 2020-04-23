@@ -1,43 +1,21 @@
 import click
-from typing import List
-from fuzzywuzzy import fuzz
 
 from gui.gui import start_gui
 from inverted_index.querying import perform_exploration
-from src.utils import load_csv, load_enriched_sitc_codes, find_matching_intersections
+from src.utils import load_csv, load_enriched_sitc_codes, find_matching_intersections, sort_by_similarity
 from inverted_index.utils import load_metadata
+from text_similarity.text_similarity import perform_text_similarity
+from word_embeddings.word2vec import Word2VecSimilarity
 
 OENACE_FILE_PATH = '../data/preprocessed/oenace2008.csv'
 SITC2_FILE_PATH = '../data/preprocessed/sitc2.csv'
 SITC2_ENRICHED_FILE_PATH = '../data/correspondence_tables/mapped/enriched.csv'
 
-TEXT_SIMILARITY_THRESHOLD = 75
-
-
-def text_similarites(text1: str, text2: str, verbose: bool = False) -> int:
-    # TODO: add more explanations of what this does from. Use https://github.com/seatgeek/fuzzywuzzy
-    val = fuzz.token_set_ratio(text1, text2)
-    if verbose:
-        print(f'Similiartiy between {text1} and {text2} is: {val}')
-    return val
-
-
-def sort_by_similarity(matching_list: List[dict]) -> List[dict]:
-    return sorted(matching_list, key=lambda x: x['similarity'], reverse=True)
-
-
-def perform_text_similarity(sitc_title: str, oeance_title: str, should_extend_sitc: bool = False,
-                            sitc_extensions: List[str] = None):
-    if not should_extend_sitc:
-        return text_similarites(sitc_title, oeance_title)
-    else:
-        # be very optimistic and assume that text similarity value equals the maximum similarity in case of extended
-        # sitc values
-        return max([text_similarites(sitc_extension, oeance_title) for sitc_extension in sitc_extensions])
+TEXT_SIMILARITY_THRESHOLD = 65
 
 
 @click.command()
-@click.option('-e', '--use_enriched_sitc', required=True, is_flag=True, default=False)
+@click.option('-e', '--use_enriched_sitc', required=True, is_flag=True, default=True)
 @click.option('-v', '--verbose', required=True, is_flag=True, default=False)
 def main(use_enriched_sitc: bool, verbose: bool):
     oenace_codes = load_csv(OENACE_FILE_PATH)
@@ -54,8 +32,8 @@ def main(use_enriched_sitc: bool, verbose: bool):
     for sitc_code, sitc_title in sitc_codes.items():
         total += 1
 
-        if total > 2:
-            break
+        if total > 5:
+            pass
 
         if verbose:
             print(f"Findind a mapping for: '{sitc_title}'")
@@ -75,11 +53,14 @@ def main(use_enriched_sitc: bool, verbose: bool):
         oenace_candidates[sitc_code] = {
             'text_similarity': [],
             'inverted_index': [],
+            'word_embedding': [],
         }
+
         # step1: try to do exact name matching
         for oenace_code, oenace_title in oenace_codes.items():
             text_similarity = perform_text_similarity(
-                sitc_title=sitc_title, oeance_title=oenace_title, should_extend_sitc=use_enriched_sitc,
+                sitc_title=sitc_title, oeance_title=oenace_title,
+                should_extend_sitc=use_enriched_sitc,
                 sitc_extensions=sitc_title_extendend
             )
 
@@ -90,10 +71,6 @@ def main(use_enriched_sitc: bool, verbose: bool):
                     'similarity': text_similarity,
                 })
 
-        # sort by text similiarty desc, keeping the best matching oenace code first
-        if oenace_candidates[sitc_code]['text_similarity']:
-            oenace_candidates[sitc_code]['text_similarity'] = sort_by_similarity(oenace_candidates[sitc_code]['text_similarity'])
-
         # step2: perform search using tf-idf weighting
         tf_idf_results = perform_exploration(query='.'.join(sitc_title_extendend), method=method, metadata=metadata)
         if tf_idf_results:
@@ -103,25 +80,49 @@ def main(use_enriched_sitc: bool, verbose: bool):
                 'similarity': item[1],
             } for item in tf_idf_results])
 
-        # step 4: a model
+        # step 3: word embedding
+        word2vec_similarity = Word2VecSimilarity(verbose=verbose)
 
-        # pprint(oenace_candidates)
+        for oenace_code, oenace_title in oenace_codes.items():
+
+            if use_enriched_sitc:
+                word_embedding_similarity = word2vec_similarity.enriched_sitc_similarity(sitc_title_extendend,
+                                                                                         oenace_title)
+            else:
+                word_embedding_similarity = word2vec_similarity.text_similarity(sitc_title, oenace_title)
+
+            # append all as possible candidates, but in the end choose only top 3 with minimum distance
+            oenace_candidates[sitc_code]['word_embedding'].append({
+                'oenace_code': oenace_code,
+                'oenace_title': oenace_title,
+                'similarity': word_embedding_similarity,
+            })
+
+        # sort by similiarity descending
+        for method in ['text_similarity', 'inverted_index']:
+            if oenace_candidates[sitc_code][method]:
+                oenace_candidates[sitc_code][method] = sort_by_similarity(
+                    oenace_candidates[sitc_code][method],
+                    descending=True
+                )
+        oenace_candidates[sitc_code]['word_embedding'] = sort_by_similarity(
+            oenace_candidates[sitc_code]['word_embedding'], descending=False
+        )[:100]
 
         # find intersections from all steps
         intersections = find_matching_intersections(oenace_candidates[sitc_code])
 
         if intersections:
             counter += 1
-            print(f"Findind a mapping for: '{sitc_title}'")
+            print(f"\nFindind a mapping for: '{sitc_title}'")
             for val in intersections:
                 print(f' - {val}')
             print(end='\n\n')
-        else:
-            pass
-            # print('Nothing found')
-        # print(end='\n\n')
+
+        print(f'Done {total}/{len(sitc_codes)} so far')
 
     click.echo(f'Found a total of {counter} mappings from {total}')
+
     start_gui(sitc_codes=sitc_codes, oeance_codes=oenace_codes, oenace_candidates=oenace_candidates)
 
 

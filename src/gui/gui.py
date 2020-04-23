@@ -6,14 +6,15 @@ from tkinter.filedialog import askopenfilename
 import gui.constants as const
 
 # TODO: should we remove stuff from oenace list?
-# TODO: show a toast when a mapping is added
-# TODO: show a toast when a mapping is deleted
 # TODO: discuss the file format for storing
+# TODO: currently in the list of candidates, we dont show intersections but show top _number_ from different methods. do we want that? Showing only
+# TODO: intersected mappings would result in not very helpful shit
 
 from gui.classes import FiredFrom
 
 from gui.csv_utils import CSVHandler
 from gui.utils import format_sitc_item, get_code_from_text, get_sitc_code_from_mapping_text
+from utils import find_matching_intersections
 
 
 class App:
@@ -235,17 +236,24 @@ class App:
     def update_candidates_list(self, selected_code):
         """Populates the listbox with corresponding sitc_items """
         oenace_candidates = self.oenace_candidates.get(selected_code, const.EMPTY_CANDIDATES)
-        all_candidates = oenace_candidates['text_similarity'] + oenace_candidates['inverted_index']
+
+        PICK_AT_MOST_FROM_METHOD = 4
+        all_candidates = oenace_candidates['text_similarity'][:2] \
+                         + oenace_candidates['inverted_index'][:2] \
+                         + oenace_candidates['word_embedding'][:PICK_AT_MOST_FROM_METHOD]
+
+        # convert to set to remove duplicates
+        items = set([(oenace_item['oenace_code'], oenace_item['oenace_title']) for oenace_item in all_candidates])
 
         self.sitc_candidates_listbox.delete(0, 'end')
 
         mapped_oenace_code = self.mappings.get(selected_code)
         i = 0
-        for item in all_candidates:
-            self.sitc_candidates_listbox.insert(i, format_sitc_item(item['oenace_code'], item['oenace_title']))
+        for oenace_code, oenace_title in items:
+            self.sitc_candidates_listbox.insert(i, format_sitc_item(oenace_code, oenace_title))
 
             # if this sitc item has a mapping to an oenace code, highlight it
-            if mapped_oenace_code == item['oenace_code']:
+            if mapped_oenace_code == oenace_code:
                 self.sitc_candidates_listbox.itemconfig(i, {'bg': const.COLOR_ITEM_MAPPED_CODE})
                 self.sitc_candidates_listbox.see(i)
             else:

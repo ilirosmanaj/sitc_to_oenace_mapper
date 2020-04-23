@@ -69,8 +69,6 @@ def pre_process(text: str, method: str = None) -> List[str]:
         processing_steps.append(_stemm)
     elif method == 'lemmatizing':
         processing_steps.append(_lemmatize)
-    elif method == 'all':
-        processing_steps.extend([_stemm, _lemmatize])
 
     for processing_step in processing_steps:
         line = processing_step(line)

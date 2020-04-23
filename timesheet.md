@@ -28,3 +28,6 @@
 | 15.04.2020  |  5h             | Fix key error and stemming in the TF-IDF weighting  |
 | 18.04.2020  |  7h             | Working on the report, write problem description and text similiarity part |
 | 19.04.2020  |  7h             | Report: inverted index and comparison charts |
+| 21.04.2020  |  6h             | Word embedding research. Start implementation and usage of word2vec |
+| 22.04.2020  |  8h             | Move word embedding comparison to separate class and use it from the mapper |
+| 23.04.2020  |  7h             | Write word embedding explanations and results into report |

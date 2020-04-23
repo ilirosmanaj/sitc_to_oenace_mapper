@@ -128,7 +128,6 @@ The approaches used are: text similiarty seach, TF-IDF weighting and Word Embedd
 knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/Workflow.png")
 ```
 
-
 ### Text similarity
 
 In it's core, this can be broken to a pattern search, or just string search. This is a very inuitive thing, therefore just perform plain text search inbetween items and see which items
@@ -267,13 +266,81 @@ knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mappe
 ```
 
 
-## Word embedding?!
+## Word embedding
 
-TODO: should we really do it?
+Word embedding is the collective name for a set of language modeling and feature learning techniques in natural language processing (NLP) where words or phrases from the vocabulary are 
+mapped to vectors of real numbers. Conceptually it involves a mathematical embedding from a space with many dimensions per word to a continuous vector space with a much lower dimension. Methods 
+to generate this mapping include neural networks, dimensionality reduction on the word co-occurrence matrix, probabilistic models, explainable knowledge base method, and explicit representation in terms of the context in which words appear.
+
+Word and phrase embeddings, when used as the underlying input representation, have been shown to boost the performance in NLP tasks such as syntactic parsing and sentiment analysis. As this is an NLP task, this
+is of great help here to try out.
+
+So, to sum it up shortly, this distributed representation is learned based on the usage of words. and it allows words that are used in similar ways to result in having similar representations, naturally capturing their meaning. Therefore,
+it goes beyond plain comparison, but takes into consideration the semantics as well.
+When two different words are compared against each other, the vector representation of these two words is retrieved and their distance compared. There are two distance metrics usually used: cosine similiarty (which is very 
+specific to vectors) and word movers distance. 
+
+There are different options one can choose in this situation: build it's own word embedded model, or use the already pre-trained ones. Even though the data available have been enhanced here, there is still
+very few data and training a model on these available data would lead to a biased and bad model. Pre-trained models, on the other hand, are trained on plenty of data from different sources and are therefore
+much better for these kind of NLP tasks. Also, they are trained for you, so it saves time and resources. 
+
+For the purpose of this task, the word2vec embedding is used.
+
+### Word2Vec
+
+Word2vec is a two-layer neural net that processes text by vectorizing words. Its input is a text corpus and its output is a set of vectors: feature vectors that represent words in that corpus. While Word2vec is not a deep 
+neural network, it turns text into a numerical form that deep neural networks can understand. The purpose and usefulness of Word2vec is to group the vectors of similar words together in vectorspace. That is, it detects similarities mathematically. Word2vec creates vectors that are distributed numerical representations of word features, features such as the context of individual words. It does so without human intervention.
+
+Given enough data, usage and contexts, Word2vec can make highly accurate guesses about a word’s meaning based on past appearances. Those guesses can be used to establish a word’s association with other words (e.g. “man” is to “boy” what “woman” is to “girl”), or cluster documents and classify them by topic. Those clusters can form the basis of search, sentiment analysis and recommendations in diverse fields.
+
+The output of the Word2vec is a vocabulary in which each item has a vector attached to it, which can be fed into a deep-learning net or simply queried to detect relationships between words.
+
+An example of Word2Vec for the word 'Sweeden', would output in order of proximity:
+
+  * Norway, 0.760
+  * Denmark, 0.715
+  * Finland, 0,620
+  * Switzerland, 0.588
+  
+As seen, this approximity is learned by the words usages in similar contexts - and it's not that bad.
+
+While comparing two sentences, each of the words is compared in terms of distance, and for this use case the Word Movers Distance has been used.
+
+### Word Movers Distance
+
+Other than the cosine similarity, word movers distance is now considered among state of the art metrics for text comparison. From the high level overview, it uses word embeddings to learn
+semantically meaningful representations of the words, based on local co-occurrences in sentences. 
+
+WMD (Word Movers Distance) utilizes the property of word vector embeddings and treats text documents as a weighted point cloud of embedded words. The distance between two text documents A and B 
+is calculated by the minimum cumulative distance that words from the text document A needs to travel to match exactly the point cloud of text document B.
+
+Consider the case of two sentences:
+
+  * Sentence 1: Obama speaks to the media in Illinios
+  * Sentence 2: The president greets the press in Chicago
+  
+The first step, as in all text retrieval task, is removing the stop words and getting the vector representations for each word. Then, two documents are compared against each other word by word,
+as in the following image.
+
+```{r, out.width = "300px", fig.cap="Word Movers Distance example", echo=FALSE}
+knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/word-movers-distance.png")
+```
+
+Since sentences have multiple words, and choosing which word to use for pair-waise comparison can lead to multiple comparison. Therefore, the two most similar words are choosen to be compared (e.g. Obama with President, 
+Press with Media, Chicago with Illinois etc). The smaller the distance, the more similar the sentences are to each other.
+
+```{r, out.width = "200px", fig.cap="Word Movers Distance example (cont.)", echo=FALSE}
+knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/word-movers-distance-2.png")
+```
+
+In the end, the similarity of two sentences using WMD is just a number. For the problem of mapping SITC2 items, a threshold of what is considered similar would be needed. But, since we are not sure whether
+there actually exist similar items that reach a certain threshold, we compare the distance with all OENACE items, and then choose top 10 candidates with the smallest distance, as possible mapping candidate. Of course,
+for the final result we use intersection of all candidates from all approaches, that's why we can be safe this will not introduce any bias in the output. 
 
 ## Mapping Results
 
-TODO: write something about the results. How many items are mapped? why so few? 
+TODO: write something about the results. How many items are mapped? why so few? how long it takes etc. Show examples when we find mapping, show that sometimes we fail because
+      of no intersections etc
 
 ### Graphical User Interface
 
@@ -289,4 +356,4 @@ knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mappe
 
 All in all, there is a list of SITC2 items in the left. When an item is clicked, it shows the found candidates and the list of ÖNACE items is always there, to manually search and map it.
 
-## Conlusion
+## Conclusions

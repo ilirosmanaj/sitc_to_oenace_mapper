@@ -2,6 +2,10 @@ import csv
 from typing import Dict, List
 
 
+def sort_by_similarity(matching_list: List[dict], descending: bool = True) -> List[dict]:
+    return sorted(matching_list, key=lambda x: x['similarity'], reverse=descending)
+
+
 def load_csv(path_to_file: str) -> Dict:
     with open(path_to_file, 'r') as csv_file:
         csv_reader = csv.DictReader(csv_file)
