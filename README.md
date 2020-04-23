@@ -9,32 +9,24 @@ Install requirements via:
 
 `pip install -r requirements.txt`
 
+
+In order to run the project, please mark 'src' folder as sources root (if you use PyCharm as IDE, it should do that 
+automatically), download the needed pre-trained word embedded model (see the README under `data` on how to do it) and 
+then run the script `sitc_to_oenace_mapper.py`:
+
+```
+python src/sitc_to_oenace_mapper.py
+```
 ### Used approach
 
 The mapping procedure has three main steps:
 
-* fuzzy matching based on the description of categories
-    * think of incorporating semantic meaning as well (try some NLP approach)
-    * enrich the dataset using correspondance tables. This does not match the codes for us, but rather gives
-      the feeling of which terms are mentioned together. That can be used when matching (e.g. wheat is used together with
-      word cereal) 
-* build a model that would find similarities between categories, and if no good 
-category is found, use it to find the _most fitting_ category 
+* Fuzzy matching based on the description of categories
+* TF-IDF weighting
+* Word Embedding
 
-### To research
+The mapper runs the mapping procedure and then shows a GUI for the user, where mappings can be altered as needed.
 
-* find if there is a model that finds similarities between different product 
-  categories 
- 
-### Already tried
-
-* [Dandelion API](https://dandelion.eu/) for the NLP approach
-    * works relatively fine, but its quite expensive. For us, if we would use the brute-force approach of comparing
-      all_sitc with all_oenace would be around 4 milion requets for every category. A load like this is not even supported
-      by their offers (neither free nor paid).
-    * As part of this, a bunch of other text similarity API-s were considered (e.g. [Parallel Dots](https://www.paralleldots.com/), 
-     [TwinWord](https://www.twinword.com/api/text-similarity.php), [RxNLP](https://rxnlp.com/text-similarity-api/#.XaL5uuYzY5k)),
-     but all of them are too expensive for use.
 
 ### Troubleshooting
 
