@@ -5,13 +5,12 @@ An automated mapper from SITC (Standard International Trade Classification) to Ã
 
 ## Setup
 
-##### Create a virtual environment to install the needed requirements:
+##### Create a virtual environment to install the needed requirements and activate it:
 
-`python -m virtualenv venv`
-
-##### Activate the virtual venv:
-
-`source venv/bin/activate`
+```
+python -m virtualenv venv
+source venv/bin/activate
+```
 
 ##### Install requirements via:
 
