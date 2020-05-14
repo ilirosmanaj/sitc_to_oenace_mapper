@@ -31,3 +31,4 @@
 | 21.04.2020  |  6h             | Word embedding research. Start implementation and usage of word2vec |
 | 22.04.2020  |  8h             | Move word embedding comparison to separate class and use it from the mapper |
 | 23.04.2020  |  7h             | Write word embedding explanations and results into report |
+| 14.05.2020  |  3h             | Feedback round: add dropdown to UI, fix README, store candidates as well |

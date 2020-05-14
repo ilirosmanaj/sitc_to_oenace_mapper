@@ -34,8 +34,10 @@ def main(use_enriched_sitc: bool, verbose: bool):
     for sitc_code, sitc_title in sitc_codes.items():
         total += 1
 
-        if total > 5:
-            pass
+        if total > 1:
+            # Change this to pass if you want to map all the codes
+            # Change this to break if you want to stop and use mappings from previous trainings
+            break
 
         if verbose:
             print(f"Findind a mapping for: '{sitc_title}'")

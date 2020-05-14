@@ -9,8 +9,7 @@ class CSVHandler:
         self.path_to_results = PATH_TO_MAPPING
         self.column_names = ['SITC_CODE', 'OENACE_CODE']
 
-    def store_results(self, mapping_results: dict):
-        file_name = f'mapping-{datetime.now().isoformat()}'
+    def store_results(self, mapping_results: dict, file_name: str):
         full_path = f'{self.path_to_results}/{file_name}.csv'
 
         with open(full_path, 'w') as csvfile:

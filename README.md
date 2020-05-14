@@ -5,18 +5,47 @@ An automated mapper from SITC (Standard International Trade Classification) to Ã
 
 ## Setup
 
-Install requirements via:
+##### Create a virtual environment to install the needed requirements:
+
+`python -m virtualenv venv`
+
+##### Activate the virtual venv:
+
+`source venv/bin/activate`
+
+##### Install requirements via:
 
 `pip install -r requirements.txt`
 
+##### Download needed packages from nltk
 
-In order to run the project, please mark 'src' folder as sources root (if you use PyCharm as IDE, it should do that 
-automatically), download the needed pre-trained word embedded model (see the README under `data` on how to do it) and 
-then run the script `sitc_to_oenace_mapper.py`:
+You can run this from python console:
+
+```{python}
+>>> import nltk
+>>> nltk.download('punkt')
+>>> nltk.download('stopwords')
+```
+
+##### Download the pretrained word embedded model
+
+See the README under `data` on how to do it
+ 
+##### Build the inverted indexes
+
+Build the inverted index by running the `build_inverted_index.py` under the `src/inverted_index` folder
+    
+* Do this for both methods: stemming and lemmatizing
+* this should store the inverted index files under `data/inverted_index`
+
+##### Run the mapper
+
+Run the `sitc_to_oenace_mapper.py` script via
 
 ```
 python src/sitc_to_oenace_mapper.py
 ```
+
 ### Used approach
 
 The mapping procedure has three main steps:

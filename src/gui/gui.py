@@ -2,19 +2,15 @@ import tkinter
 from tkinter import *
 from tkinter import messagebox
 from tkinter.filedialog import askopenfilename
+from datetime import datetime
 
 import gui.constants as const
-
-# TODO: should we remove stuff from oenace list?
-# TODO: discuss the file format for storing
-# TODO: currently in the list of candidates, we dont show intersections but show top _number_ from different methods. do we want that? Showing only
-# TODO: intersected mappings would result in not very helpful shit
 
 from gui.classes import FiredFrom
 
 from gui.csv_utils import CSVHandler
+from gui.mapping_utils import CandidatesHandler
 from gui.utils import format_sitc_item, get_code_from_text, get_sitc_code_from_mapping_text
-from utils import find_matching_intersections
 
 
 class App:
@@ -57,10 +53,22 @@ class App:
         self.sitc_candidates_listbox.bind("<ButtonRelease-1>", self.hide_delete_mapping_button)
 
         self.candidates_search_label = Label(self.root, text='Found Candidates')
-        self.candidates_search_label.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES
-                                             + (const.LISTBOX_WIDTH/3),
+        self.candidates_search_label.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES,
                                            y=const.MARGIN_TOP,
                                            width=const.LABEL_WIDTH)
+
+        self.candidates_dropdown = StringVar(self.root)
+
+        choices = {'ALL', 'Fuzzy Matching', 'TF-IDF', 'Word Embedding'}
+        self.candidates_dropdown.set('ALL')
+
+        self.popupMenu = OptionMenu(self.root, self.candidates_dropdown, *choices)
+        self.popupMenu.place(x=const.MARGIN_LEFT + const.LISTBOX_WIDTH + const.DISTANCE_BETWEEN_LISTBOXES +
+                               const.LABEL_WIDTH + 20,
+                             y=const.MARGIN_TOP - 5,
+                             width=const.DROPDOWN_WIDTH)
+
+        self.candidates_dropdown.trace('w', self.on_sitc_candidates_dropdown_change)
 
         self.oenace_listbox = Listbox(self.root, bg=const.COLOR_ITEM_EMPTY)
         self.oenace_listbox.place(x=const.MARGIN_LEFT + (2 * const.LISTBOX_WIDTH) + (2 * const.DISTANCE_BETWEEN_LISTBOXES),
@@ -154,6 +162,7 @@ class App:
         )
 
         self.csv_handler = CSVHandler()
+        self.candidates_handler = CandidatesHandler()
 
     def update_sitc_items_shown(self):
         sitc_total = len(self.sitc_codes)
@@ -174,6 +183,18 @@ class App:
         self.btn_delete_mapping.lower()
         self.lbl_ghost.lift()
 
+    def on_sitc_candidates_dropdown_change(self, *args):
+        sitc_item = self.sitc_listbox.get(ACTIVE)
+
+        # if no sitc item is currently selected, then do nothing (we do not know where to map it)
+        if not sitc_item:
+            print('No sitc item selected. Returning from mapping')
+            return
+
+        sitc_code = get_code_from_text(sitc_item)
+
+        self.update_candidates_list(sitc_code)
+
     def remove_mapping(self, *args):
         current_selection = self.current_mapping_listbox.get(ACTIVE)
         current_sitc_code = current_selection.split('->')[0].split('-')[0].strip()
@@ -192,6 +213,8 @@ class App:
             return
 
         self.mappings = self.csv_handler.load_results(filename)
+        self.oenace_candidates = self.candidates_handler.load_candidates(filename)
+
         self.fill_current_mappings_listbox()
         self.update_sitc_selections()
 
@@ -213,7 +236,11 @@ class App:
             listbox.config(yscrollcommand=scrollbar_y.set)
 
     def save_mappings(self):
-        stored_at = self.csv_handler.store_results(self.mappings)
+        file_name = f'mapping-{datetime.now().isoformat()}'
+
+        stored_at = self.csv_handler.store_results(self.mappings, file_name)
+        self.candidates_handler.store_candidates(self.oenace_candidates, file_name)
+
         messagebox.showinfo(title='Mapping successfully saved', message=f'We have saved your mapping in '
                                                                         f'location {stored_at}')
 
@@ -236,11 +263,23 @@ class App:
     def update_candidates_list(self, selected_code):
         """Populates the listbox with corresponding sitc_items """
         oenace_candidates = self.oenace_candidates.get(selected_code, const.EMPTY_CANDIDATES)
+        method = self.candidates_dropdown.get()
 
-        PICK_AT_MOST_FROM_METHOD = 4
-        all_candidates = oenace_candidates['text_similarity'][:2] \
-                         + oenace_candidates['inverted_index'][:2] \
-                         + oenace_candidates['word_embedding'][:PICK_AT_MOST_FROM_METHOD]
+        PICK_AT_MOST_FROM_METHOD = 8
+
+        if method == 'ALL':
+            all_candidates = oenace_candidates['text_similarity'][:3] \
+                             + oenace_candidates['inverted_index'][:3] \
+                             + oenace_candidates['word_embedding'][:5]
+
+        elif method == 'Fuzzy Matching':
+            all_candidates = oenace_candidates['text_similarity'][:PICK_AT_MOST_FROM_METHOD]
+
+        elif method == 'TF-IDF':
+            all_candidates = oenace_candidates['inverted_index'][:PICK_AT_MOST_FROM_METHOD]
+
+        else:
+            all_candidates = oenace_candidates['word_embedding'][:PICK_AT_MOST_FROM_METHOD]
 
         # convert to set to remove duplicates
         items = set([(oenace_item['oenace_code'], oenace_item['oenace_title']) for oenace_item in all_candidates])

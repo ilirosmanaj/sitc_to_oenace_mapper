@@ -21,9 +21,11 @@ COLOR_ITEM_EMPTY = 'white'
 LABEL_WIDTH = 120
 ENTRY_WIDTH = 200
 BUTTON_WIDTH = 150
+DROPDOWN_WIDTH = 210
 
 
 EMPTY_CANDIDATES = {
     'text_similarity': [],
     'inverted_index': [],
+    'word_embedding': [],
 }
