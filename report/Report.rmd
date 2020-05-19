@@ -1,8 +1,8 @@
 ---
 title: "SITC2 to ÖNACE mapper"
 subtitle: "194.047 Interdisciplinary Project in Data Science"
-author: "Ilir Osmanaj"
-date: "23.04.2020"
+author: "Ilir Osmanaj - 11770999"
+date: "20.05.2020"
 output:
   rmarkdown::pdf_document:
     fig_caption: yes        
@@ -13,6 +13,7 @@ output:
 knitr::opts_chunk$set(fig.align='center') 
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(python.reticulate = FALSE)
+library(knitr)
 ```
 
 ## Problem Description
@@ -59,35 +60,32 @@ then applying plain Text Search would have been enough. Also, applying more soph
 Both, SITC2 and ÖNACE files contain more categories than needed for this task. For this reason, some preprocessing was used to cleanup the category description a bit and also
 select only the items that are needed for the purpose here.
 
-Additionally, the ÖNACE items are used to build the inverted index, which is then used by the TF-IDF weghting explained later.
+Two are considered as main preprocessing steps:
+
+  * Cleanup of the titles
+    * Sometimes the category descriptions would have '...' contained. Those points refer to the description from the parent category and those cases were correctly fixed 
+    * Abbreviations were prolonged (for example: n.e.s. is prolonged to the 'not elsewhere specified')
+  * Select level 4
+    * Each category has subcategories and this can go up to four levels of depth. The classifications use top down approach, where top levels represent high level overview
+      of a category and the lowest levels (in this case level four) represent the category's specialization more specifically. Only that level is used for further processing
+
+Additionally, the correspondance tables were used for data enhacement (see more in the Data Enhacement section) and the ÖNACE items were used to build the inverted index, which 
+is then used by the TF-IDF weghting (see more in the Inverted Index section).
 
 ```{r, out.width = "400px", fig.cap="Preprocessing steps for SITC and ÖNACE items", echo=FALSE}
 knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/preprocessing.png")
 ```
-  
+
 
 ### SITC2 preprocessing
 
 SITC2 groups industry categories and commodities in groups and then subgroups. Overall it has ~2580 items, from which 10 are like main groups then there are subgroups 
 for groups, and those subgroups may have groups as well. This can go up different levels of depth, depending on the category. An example for an SITC2 category would be:
 
-  * Beverages and Tobacco
-    * Beverages
-      * Alcoholic beverages
-        * Wine of fresh grapes (including must)
-        * Beer made from malt (including ale, stout and porter)
-      * Non-alcohoic beverages
-        * Waters (including spa waters and aerated waters); ice and snow
-        * Lemonade, flavoured spa waters and flavoured aerated waters, and other non
-    * Tobacco and Tobacco manufactures
-      * Tobacco, unmanufactured; tobaco refuse
-        * Tobacco, wholly of partly stripped
-        * Tobacco refuse
-      * Tobacco, manufactured
-        * Cigars, cheroots; cigarillos
-        * Cigarettes
-        * Tobacco, manufactured (including smoking and chewing tobacco, snuff); tobacco extract and essences
-        
+```{r, out.width = "480px", fig.cap="SITC2 category example", echo=FALSE}
+knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/SITC-table.png")
+```
+
 For the usecase that is being analyzed, only items from category four are selected for further usage. This ends up with 786 items from SITC2 revision.
 
 ### ÖNACE preprocessing
@@ -342,7 +340,8 @@ for the final result we use intersection of all candidates from all approaches, 
 ## Mapping Results
 
 As most of the information retrieval tasks, this task takes slight a bit of time. In average, the runtime is about 35 minutes. The most time consuming process here is the comparison using word2vec, since it loads all te vectors and performs
-word movers distance on them. If raw data would have been used, then the time would have been shorter, but it would be a trade between execution time and quality of results.
+word movers distance on them. If raw data would have been used, then the time would have been shorter - but it would be a trade between execution time and quality of results. In this specific case, execution time is not very cruical,
+since this is a one time process.
 
 The problem of automated mapping of SITC2 items to ÖNACE is something that we are not aware that was tried by someone else. Given that, there is no real state of the art or some comparison point with which our
 mapper could be compared against. Yet, mapping results can be evaluated by the total number mapped items, whether those mappings make sense or not.
@@ -357,24 +356,35 @@ we endup with ~135 items automatically mapped. These automatically mapped candid
   * SITC2 description: "Ores and concentrates of uranium and thorium"
     * Mapped ÖNACE: "Mining of uranium and thorium ores" 
 
-The biggest issue here is that there exist plenty of SITC2 items, which do not have any reasonable mapping candidate in the ÖNACE list. This is either that this category of industry is not present in ÖNACE list or its modified in a way
-that the category descriptions no longer represent the same things. This is expected, as these mappings not necessarily were meant to fit to each other.
+The biggest issue here is that there exist plenty of SITC2 items which do not have any reasonable mapping candidate in the ÖNACE list. This is either that this category of industry is not present in ÖNACE list or its modified in a way
+that the category descriptions are no longer represented in similiar ways. This is expected, as these mappings not necessarily were meant to fit to each other.
 
+From our Ensemle Learning prespective, all three mapping approaches are considered to have the same importance. The same importance in the sense that the candidates coming from Text Similiarity approach (which is a rather simple approach)
+have the same weight as the candidates coming from Word Embeddings (which is a rather advanced technique). Of course, this might be considered slightly non-intuitive and as part of future work can be considered to implement different
+voting strategies and give higher priority to the more advanced methods. Given the voting system (in this case unanimous system), there might happen that some really good candidates coming from e.g. Word Embedding, don't make it to be 
+official candidates just because Text Similiarity did not consider them as suitable candidates.
+
+As explained in the sections above, for Text Similarity a similiarty threshold has been set. This was not applied for TF-IDF Weighting and Word Embeddings, because for some reason setting a threshold here is a bit harder, since there might
+be some specific words which increase the similiarty a lot, but overall that does not reflect the whole long category description. That is the reason why there is no comparison between methods, in terms of mapped items.
+
+Logically, the advanced methods produce the most meaningful results, since they consider similiarties in a more thorough way. If it was to give an order of meaningfulness of the results, then the order would be: text similiarity, inverted index
+and word embedding - as the best performing approach. 
 
 ### Graphical User Interface
 
 Even though there are different approaches trying to solve this issue in the background, this is a sensitive process which needs some human having a look at it - at least for a bit. For this purpose, a GUI application
 was built, which to the user the posibility to list the list of intersecting candidates for each SITC2 item, select one of them and even delete or change it.
 
-This is a simple GUI, which offers the basic CRUD (create, read, update, delete) operations on the current mappings. Also, user is offered the possibility to load existing mappings and start working on them from there.
+This is a simple GUI, which offers the basic CRUD (create, read, update, delete) operations on the current mappings. Also, user is offered the possibility to load existing mappings and start working on them from a previous
+state that was achieved before.
 The GUI tool was built mainly for convinience of the user.
 
 ```{r, out.width = "475px", fig.cap="Graphical User Interface", echo=FALSE}
-knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/GUI.png")
+knitr::include_graphics("/home/ilirosmanaj/Documents/Github/sitc_to_oenace_mapper/report/images/GUI-2.png")
 ```
 
 All in all, there is a list of SITC2 items in the left. When an item is clicked, it shows the found candidates and the list of ÖNACE items is always there, to manually search and map it.
-
+  
 ## Conclusions
 
 As a Natural Language Processing problem, this problem is very interesting, especially considering the fact that the instances considered here were standard descriptions used in economy - which are meant for worldwide usage. Given this,
