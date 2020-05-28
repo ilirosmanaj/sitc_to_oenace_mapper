@@ -1,5 +1,5 @@
 ---
-title: "SITC2 to ÖNACE mapper"
+title: "Semantic Ontology Matching for Product and Industry Classifications"
 subtitle: "194.047 Interdisciplinary Project in Data Science"
 author: "Ilir Osmanaj - 11770999"
 date: "20.05.2020"

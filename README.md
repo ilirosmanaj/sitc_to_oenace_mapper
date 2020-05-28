@@ -53,7 +53,7 @@ The mapping procedure has three main steps:
 * TF-IDF weighting
 * Word Embedding
 
-The mapper runs the mapping procedure and then shows a GUI for the user, where mappings can be altered as needed.
+The mapper runs the mapping procedure and then displays a GUI to the user, where mappings can be altered (if needed).
 
 
 ### Troubleshooting
